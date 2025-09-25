@@ -1,0 +1,27 @@
+# Firebase config
+# Este archivo contiene claves sensibles y no debe ser subido a repositorios públicos.
+config.js
+
+# Dependencias
+# Las dependencias pueden ser reinstaladas usando el manejador de paquetes.
+/node_modules
+
+# Archivos de build
+# Estos archivos son generados automáticamente y no necesitan control de versiones.
+/dist
+/build
+
+# Archivos de log
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Directorios y archivos de editores de código
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
