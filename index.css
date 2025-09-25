@@ -1,0 +1,421 @@
+:root {
+    --bg-primary: #121212;
+    --bg-secondary: #1e1e1e;
+    --bg-tertiary: #2a2a2a;
+    --text-primary: #e0e0e0;
+    --text-secondary: #a0a0a0;
+    --accent-primary: #6a0dad;
+    --accent-secondary: #9333ea;
+    --border-color: #3a3a3a;
+    --font-family: 'Inter', sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font-family);
+    line-height: 1.6;
+}
+
+#root {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+h1, h2, h3 {
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.app-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.app-header h1 {
+    text-align: center;
+    font-size: 2.5rem;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+}
+
+.app-header .welcome-text {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    max-width: 600px;
+    margin: -0.5rem auto 1.5rem;
+}
+
+.tabs-nav {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.tab-button {
+    background-color: var(--bg-secondary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.tab-button:hover {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.tab-button.active {
+    background-color: var(--accent-primary);
+    color: white;
+    border-color: var(--accent-secondary);
+}
+
+.content-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.card {
+    background-color: var(--bg-secondary);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+}
+
+.card-image {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.card-content {
+    padding: 1rem;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.card-title {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+    flex-grow: 1;
+}
+
+.card-actions {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.card-button {
+    background-color: var(--accent-primary);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+}
+
+.card-button:hover {
+    background-color: var(--accent-secondary);
+}
+
+.prompt-container {
+    position: relative;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s ease-in-out, padding 0.5s ease-in-out;
+    background-color: var(--bg-tertiary);
+    color: var(--text-secondary);
+    font-family: monospace;
+    font-size: 0.9rem;
+    padding: 0 1rem;
+    border-top: 1px solid transparent;
+}
+
+.prompt-container.visible {
+    max-height: 200px;
+    padding: 1rem;
+    overflow-y: auto;
+    border-top: 1px solid var(--border-color);
+}
+
+.copy-button {
+    position: absolute;
+    top: 0.75rem;
+    right: 1rem;
+    background-color: var(--bg-secondary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.copy-button:hover {
+    background-color: var(--accent-primary);
+    color: white;
+}
+
+.empty-state-container, .loading-container, .error-container {
+    text-align: center;
+    padding: 4rem 2rem;
+    background-color: var(--bg-secondary);
+    border-radius: 12px;
+    border: 1px dashed var(--border-color);
+    color: var(--text-secondary);
+    margin-top: 2rem;
+}
+
+.error-container {
+    background-color: #2d1b1b;
+    border: 1px solid #6b2c2c;
+    color: #ff6b6b;
+}
+
+.loading-spinner {
+    border: 3px solid var(--bg-tertiary);
+    border-top: 3px solid var(--accent-primary);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Download/Tutorial Card Styles */
+.download-text {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: auto;
+}
+
+/* Recommendation Card Styles */
+.recommendation-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.recommendation-card {
+    background-color: var(--bg-secondary);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1rem;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    text-decoration: none;
+    color: inherit;
+}
+
+.recommendation-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+}
+
+.recommendation-card-image {
+    width: 100px;
+    height: 100px;
+    border-radius: 8px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.recommendation-card-title {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.recommendation-card-description {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+/* About Me Styles */
+.about-me-container {
+    background-color: var(--bg-secondary);
+    border-radius: 12px;
+    padding: 3rem 2rem;
+    text-align: center;
+    margin: 2rem auto;
+    max-width: 800px;
+}
+
+.profile-pic {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--accent-primary);
+    margin-bottom: 1.5rem;
+}
+
+.about-me-container h2 {
+    font-size: 2rem;
+}
+
+.bio {
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: 0 auto 2rem;
+}
+
+.links-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.social-link {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.social-link:hover {
+    background-color: var(--accent-primary);
+    border-color: var(--accent-secondary);
+    color: white;
+}
+
+/* Contact Form Styles */
+.contact-container {
+    background-color: var(--bg-secondary);
+    border-radius: 12px;
+    padding: 2rem;
+    margin: 2rem auto;
+    max-width: 700px;
+}
+
+.contact-container h2 {
+    text-align: center;
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+}
+
+.contact-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    margin-bottom: 0.5rem;
+    color: var(--text-secondary);
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 0.75rem;
+    font-size: 1rem;
+    font-family: inherit;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--accent-secondary);
+    box-shadow: 0 0 0 2px rgba(147, 51, 234, 0.3);
+}
+
+.submit-button {
+    background-color: var(--accent-primary);
+    color: white;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.3s ease;
+    font-size: 1rem;
+    margin-top: 1rem;
+}
+
+.submit-button:hover {
+    background-color: var(--accent-secondary);
+}
+
+/* Footer Styles */
+footer {
+    text-align: center;
+    padding: 2rem 1rem;
+    margin-top: 3rem;
+    border-top: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.footer-link {
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.footer-link:hover {
+    color: var(--accent-secondary);
+}
