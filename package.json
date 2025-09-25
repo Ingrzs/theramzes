@@ -1,0 +1,11 @@
+{
+  "name": "theramzes-creations",
+  "version": "1.0.0",
+  "description": "AI Prompts & Creations",
+  "type": "module",
+  "scripts": {
+    "build": "node generate-config.mjs"
+  },
+  "author": "TheRamzes",
+  "license": "ISC"
+}
