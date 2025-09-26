@@ -18,8 +18,20 @@
     <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
     
-    <!-- Cargar la configuración centralizada de Firebase -->
-    <script src="config.js"></script>
+    <!-- Definir la configuración de Firebase directamente aquí -->
+    <script>
+        // La configuración de Firebase se inyecta aquí durante el proceso de despliegue.
+        // El valor de apiKey proviene de las variables de entorno para mayor seguridad.
+        const firebaseConfig = {
+            apiKey: "__FIREBASE_API_KEY__", // Inyectado automáticamente durante el despliegue
+            authDomain: "theramzes-creations.firebaseapp.com",
+            projectId: "theramzes-creations",
+            storageBucket: "theramzes-creations.appspot.com",
+            messagingSenderId: "497450013723",
+            appId: "1:497450013723:web:1d3019c9c0d7da82a754be",
+            measurementId: "G-1B2TVSMM1Y"
+        };
+    </script>
 
     <!-- Cargar nuestro script de la aplicación (sin type="module") -->
     <script src="admin.js"></script>
