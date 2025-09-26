@@ -95,11 +95,8 @@ const DownloadCard = ({ item }) => {
 const RecommendationCard = ({ item }) => {
     const hasLink = item.linkUrl && typeof item.linkUrl === 'string' && item.linkUrl.trim() !== '';
 
-    // The card is always a div with relative positioning to contain the link overlay
-    return React.createElement('div', {
-        className: 'recommendation-card'
-    }, [
-        // Content remains the same
+    // The content is the same regardless of whether it's a link or not
+    const cardContent = [
         React.createElement('img', {
             key: 'image',
             src: item.imageUrl,
@@ -110,18 +107,22 @@ const RecommendationCard = ({ item }) => {
         React.createElement('div', { key: 'content', className: 'recommendation-card-content' }, [
             React.createElement('h3', { key: 'title', className: 'recommendation-card-title' }, item.title),
             React.createElement('p', { key: 'description', className: 'recommendation-card-description' }, item.description)
-        ]),
-        
-        // Conditionally add the link overlay. This is a robust way to make cards clickable.
-        hasLink && React.createElement('a', {
-            key: 'link-overlay',
-            href: item.linkUrl,
-            target: '_blank',
-            rel: 'noopener noreferrer',
-            className: 'card-link-overlay', // New class for styling
-            'aria-label': `Ver recomendación: ${item.title}` // Better accessibility
-        })
-    ]);
+        ])
+    ];
+
+    // Determine the root component type and its properties
+    const componentType = hasLink ? 'a' : 'div';
+    const props = {
+        className: 'recommendation-card'
+    };
+
+    if (hasLink) {
+        props.href = item.linkUrl;
+        props.target = '_blank';
+        props.rel = 'noopener noreferrer';
+    }
+
+    return React.createElement(componentType, props, cardContent);
 };
 
 const TutorialCard = ({ item }) => {
