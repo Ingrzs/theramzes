@@ -249,11 +249,26 @@ h1, h2, h3 {
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     text-decoration: none;
     color: inherit;
+    position: relative; /* Needed for the link overlay */
 }
 
-a.recommendation-card:hover {
+.recommendation-card.has-link {
+    cursor: pointer;
+}
+
+.recommendation-card.has-link:hover {
     transform: translateY(-5px);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+}
+
+.card-link-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+    border-radius: 12px; /* Match parent's border radius */
 }
 
 .recommendation-card-image {
