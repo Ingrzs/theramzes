@@ -1,3 +1,4 @@
+
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import React, { useState, useEffect } from 'https://esm.sh/react@18';
@@ -91,12 +92,23 @@ const DownloadCard = ({ item }) => {
 };
 
 const RecommendationCard = ({ item }) => {
-    return React.createElement('a', {
-        href: item.linkUrl,
-        target: '_blank',
-        rel: 'noopener noreferrer',
+    // This component is now smarter. It checks if a URL exists.
+    // If it does, it renders a clickable <a> tag.
+    // If not (for older content), it renders a non-clickable <div>.
+    const hasLink = item.linkUrl && typeof item.linkUrl === 'string' && item.linkUrl.trim() !== '';
+    const Tag = hasLink ? 'a' : 'div';
+    
+    const props = {
         className: 'recommendation-card'
-    }, [
+    };
+
+    if (hasLink) {
+        props.href = item.linkUrl;
+        props.target = '_blank';
+        props.rel = 'noopener noreferrer';
+    }
+
+    return React.createElement(Tag, props, [
         React.createElement('img', {
             key: 'image',
             src: item.imageUrl,
