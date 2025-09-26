@@ -55,9 +55,9 @@ const AddContentForm = () => {
             };
 
             if (['imagenes', 'videos'].includes(formData.category)) dataToSave.prompt = formData.prompt;
-            if (['descargas', 'tutoriales', 'recomendaciones'].includes(formData.category)) dataToSave.description = formData.description;
+            if (['descargas', 'tutoriales', 'recomendaciones', 'afiliados'].includes(formData.category)) dataToSave.description = formData.description;
             if (formData.category === 'descargas') dataToSave.downloadUrl = formData.downloadUrl;
-            if (['tutoriales', 'recomendaciones'].includes(formData.category)) dataToSave.linkUrl = formData.linkUrl;
+            if (['tutoriales', 'recomendaciones', 'afiliados'].includes(formData.category)) dataToSave.linkUrl = formData.linkUrl;
             
             await db.collection("content").add(dataToSave);
             setStatus({ message: '¡Entrada guardada con éxito!', type: 'success' });
@@ -80,7 +80,7 @@ const AddContentForm = () => {
                 React.createElement('textarea', { id: 'prompt', name: 'prompt', value: formData.prompt, onChange: handleChange, rows: 4, required: true })
             ]));
         }
-        if (['descargas', 'tutoriales', 'recomendaciones'].includes(category)) {
+        if (['descargas', 'tutoriales', 'recomendaciones', 'afiliados'].includes(category)) {
              fields.push(React.createElement('div', { key: 'desc-group', className: 'form-group' }, [
                 React.createElement('label', { htmlFor: 'description' }, 'Descripción'),
                 React.createElement('textarea', { id: 'description', name: 'description', value: formData.description, onChange: handleChange, rows: 3, required: true })
@@ -92,7 +92,7 @@ const AddContentForm = () => {
                 React.createElement('input', { type: 'url', id: 'downloadUrl', name: 'downloadUrl', value: formData.downloadUrl, onChange: handleChange, required: true })
             ]));
         }
-        if (['tutoriales', 'recomendaciones'].includes(category)) {
+        if (['tutoriales', 'recomendaciones', 'afiliados'].includes(category)) {
              fields.push(React.createElement('div', { key: 'link-group', className: 'form-group' }, [
                 React.createElement('label', { htmlFor: 'linkUrl' }, 'URL del Enlace (Sitio web)'),
                 React.createElement('input', { type: 'url', id: 'linkUrl', name: 'linkUrl', value: formData.linkUrl, onChange: handleChange, required: true })
@@ -108,7 +108,7 @@ const AddContentForm = () => {
     };
 
     return React.createElement('div', { className: 'contact-container', style: { maxWidth: '800px' } }, [
-        React.createElement('h2', { key: 'title', style: { textAlign: 'center' } }, 'Añadir Nuevo Contenido'),
+        React.createElement('h2', { key: 'title', style: { textAlign: 'center' } }, 'Añadir Contenido a la Web'),
         React.createElement('form', { key: 'form', onSubmit: handleSubmit, className: 'contact-form' }, [
             React.createElement('div', { key: 'title-group', className: 'form-group' }, [
                 React.createElement('label', { htmlFor: 'title' }, 'Título'),
@@ -120,8 +120,9 @@ const AddContentForm = () => {
                     React.createElement('option', { value: 'imagenes' }, 'Imágenes'),
                     React.createElement('option', { value: 'videos' }, 'Videos'),
                     React.createElement('option', { value: 'descargas' }, 'Descargas'),
-                    React.createElement('option', { value: 'recomendaciones' }, 'Recomendaciones'),
-                    React.createElement('option', { value: 'tutoriales' }, 'Tutoriales')
+                    React.createElement('option', { value: 'tutoriales' }, 'Tutoriales'),
+                    React.createElement('option', { value: 'afiliados' }, 'Recursos - Producto Afiliado'),
+                    React.createElement('option', { value: 'recomendaciones' }, 'Recursos - Software/Web')
                 ])
             ]),
             React.createElement('div', { key: 'imageUrl-group', className: 'form-group' }, [
