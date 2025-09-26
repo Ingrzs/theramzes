@@ -21,7 +21,7 @@ try {
 const AddContentForm = () => {
     const [formData, setFormData] = useState({
         title: '', category: 'imagenes', imageUrl: '', prompt: '',
-        description: '', downloadUrl: '', linkUrl: ''
+        description: '', downloadUrl: '', linkUrl: '', disclaimer: ''
     });
     const [status, setStatus] = useState({ message: '', type: '' });
 
@@ -50,12 +50,13 @@ const AddContentForm = () => {
             if (['descargas', 'tutoriales', 'recomendaciones', 'afiliados'].includes(formData.category)) dataToSave.description = formData.description;
             if (formData.category === 'descargas') dataToSave.downloadUrl = formData.downloadUrl;
             if (['tutoriales', 'recomendaciones', 'afiliados'].includes(formData.category)) dataToSave.linkUrl = formData.linkUrl;
+            if (formData.category === 'afiliados') dataToSave.disclaimer = formData.disclaimer;
             
             await db.collection("content").add(dataToSave);
             setStatus({ message: '¡Entrada guardada con éxito!', type: 'success' });
             setFormData({
                 title: '', category: 'imagenes', imageUrl: '', prompt: '',
-                description: '', downloadUrl: '', linkUrl: ''
+                description: '', downloadUrl: '', linkUrl: '', disclaimer: ''
             });
             setTimeout(() => setStatus({ message: '', type: '' }), 3000);
         } catch (error) {
@@ -88,6 +89,12 @@ const AddContentForm = () => {
              fields.push(React.createElement('div', { key: 'link-group', className: 'form-group' }, [
                 React.createElement('label', { htmlFor: 'linkUrl' }, 'URL del Enlace (Sitio web)'),
                 React.createElement('input', { type: 'url', id: 'linkUrl', name: 'linkUrl', value: formData.linkUrl, onChange: handleChange, required: true })
+            ]));
+        }
+        if (category === 'afiliados') {
+             fields.push(React.createElement('div', { key: 'disclaimer-group', className: 'form-group' }, [
+                React.createElement('label', { htmlFor: 'disclaimer' }, 'Aviso Legal (Disclaimer) del Producto'),
+                React.createElement('textarea', { id: 'disclaimer', name: 'disclaimer', value: formData.disclaimer, onChange: handleChange, rows: 2, placeholder: 'Ej: Como afiliado, gano por compras elegibles.' })
             ]));
         }
         return fields;
@@ -131,6 +138,76 @@ const AddContentForm = () => {
         ])
     ]);
 };
+
+// --- Componente para gestionar avisos ---
+const ManageDisclaimers = () => {
+    const [disclaimerText, setDisclaimerText] = useState('');
+    const [status, setStatus] = useState({ message: '', type: '' });
+    
+    useEffect(() => {
+        const fetchDisclaimer = async () => {
+            if (!db) return;
+            try {
+                const docRef = db.collection('settings').doc('disclaimers');
+                const doc = await docRef.get();
+                if (doc.exists) {
+                    setDisclaimerText(doc.data().resourcesPageDisclaimer || '');
+                }
+            } catch (error) {
+                console.error("Error fetching disclaimer:", error);
+            }
+        };
+        fetchDisclaimer();
+    }, []);
+
+    const handleSave = async (e) => {
+        e.preventDefault();
+        if (!db) {
+            setStatus({ message: 'Error: La base de datos no está conectada.', type: 'error' });
+            return;
+        }
+        setStatus({ message: 'Guardando aviso...', type: 'loading' });
+
+        try {
+            const docRef = db.collection('settings').doc('disclaimers');
+            await docRef.set({ resourcesPageDisclaimer: disclaimerText }, { merge: true });
+            setStatus({ message: '¡Aviso guardado con éxito!', type: 'success' });
+             setTimeout(() => setStatus({ message: '', type: '' }), 3000);
+        } catch (error) {
+             setStatus({ message: `Error al guardar: ${error.message}`, type: 'error' });
+        }
+    };
+
+    const renderStatusMessage = () => {
+        if (!status.message) return null;
+        const className = `status-message ${status.type}`;
+        return React.createElement('div', { className }, status.message);
+    };
+
+    return React.createElement('div', { className: 'contact-container', style: { maxWidth: '800px', marginTop: '3rem' } }, [
+        React.createElement('h2', { key: 'title', style: { textAlign: 'center' } }, 'Gestionar Avisos Legales'),
+        React.createElement('form', { key: 'form', onSubmit: handleSave, className: 'contact-form' }, [
+            React.createElement('div', { key: 'disclaimer-group', className: 'form-group' }, [
+                React.createElement('label', { htmlFor: 'resourcesDisclaimer' }, 'Aviso General para la Página de "Recursos"'),
+                React.createElement('textarea', {
+                    id: 'resourcesDisclaimer',
+                    name: 'resourcesDisclaimer',
+                    value: disclaimerText,
+                    onChange: (e) => setDisclaimerText(e.target.value),
+                    rows: 4,
+                    placeholder: 'Escribe aquí el aviso general que aparecerá en la página de Recursos...'
+                })
+            ]),
+            renderStatusMessage(),
+            React.createElement('button', {
+                type: 'submit',
+                className: 'submit-button',
+                disabled: status.type === 'loading'
+            }, status.type === 'loading' ? 'Guardando...' : 'Guardar Aviso')
+        ])
+    ]);
+};
+
 
 // --- Componente para gestionar (ver y borrar) contenido ---
 const ManageContent = () => {
@@ -232,9 +309,10 @@ const AdminPanel = () => {
     return React.createElement(Fragment, null, [
         React.createElement('header', { key: 'header', style: { textAlign: 'center', margin: '2rem 0' } }, [
             React.createElement('h1', { key: 'main-title' }, 'Panel de Administrador'),
-            React.createElement('p', { key: 'subtitle', style: { color: 'var(--text-secondary)' } }, 'Añade y gestiona el contenido de la web. Esta página es solo para uso local.')
+            React.createElement('p', { key: 'subtitle', style: { color: 'var(--text-secondary)' } }, 'Añade y gestiona el contenido de la web.')
         ]),
         React.createElement(AddContentForm, { key: 'add-form' }),
+        React.createElement(ManageDisclaimers, { key: 'manage-disclaimers' }),
         React.createElement(ManageContent, { key: 'manage-content' })
     ]);
 };
