@@ -4,7 +4,7 @@
   "description": "AI Prompts & Creations",
   "type": "module",
   "scripts": {
-    "build": "sed -i \"s|__FIREBASE_API_KEY__|${PUBLIC_FIREBASE_API_KEY}|g\" index.js && sed -i \"s|__FIREBASE_API_KEY__|${PUBLIC_FIREBASE_API_KEY}|g\" admin.html"
+    "build": "node build-script.js"
   },
   "author": "TheRamzes",
   "license": "ISC"
