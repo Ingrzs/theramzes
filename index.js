@@ -1,12 +1,25 @@
 
 
 
+
+
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getFirestore, collection, getDocs, query, orderBy, limit, startAfter } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import React, { useState, useEffect, useMemo, useCallback } from 'https://esm.sh/react@18';
 import ReactDOM from 'https://esm.sh/react-dom@18/client';
 import Fuse from 'https://esm.sh/fuse.js@7.0.0';
-import { firebaseConfig } from './config.js';
+
+// La configuración de Firebase se inyecta aquí durante el proceso de despliegue.
+// El valor de apiKey proviene de las variables de entorno de Vercel para mayor seguridad.
+const firebaseConfig = {
+    apiKey: "__FIREBASE_API_KEY__", // Inyectado automáticamente durante el despliegue
+    authDomain: "theramzes-creations.firebaseapp.com",
+    projectId: "theramzes-creations",
+    storageBucket: "theramzes-creations.appspot.com",
+    messagingSenderId: "497450013723",
+    appId: "1:497450013723:web:1d3019c9c0d7da82a754be",
+    measurementId: "G-1B2TVSMM1Y"
+};
 
 
 // Initialize Firebase
