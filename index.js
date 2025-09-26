@@ -1,4 +1,5 @@
 
+
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import React, { useState, useEffect } from 'https://esm.sh/react@18';
@@ -92,23 +93,13 @@ const DownloadCard = ({ item }) => {
 };
 
 const RecommendationCard = ({ item }) => {
-    // This component is now smarter. It checks if a URL exists.
-    // If it does, it renders a clickable <a> tag.
-    // If not (for older content), it renders a non-clickable <div>.
     const hasLink = item.linkUrl && typeof item.linkUrl === 'string' && item.linkUrl.trim() !== '';
-    const Tag = hasLink ? 'a' : 'div';
-    
-    const props = {
+
+    // The card is always a div with relative positioning to contain the link overlay
+    return React.createElement('div', {
         className: 'recommendation-card'
-    };
-
-    if (hasLink) {
-        props.href = item.linkUrl;
-        props.target = '_blank';
-        props.rel = 'noopener noreferrer';
-    }
-
-    return React.createElement(Tag, props, [
+    }, [
+        // Content remains the same
         React.createElement('img', {
             key: 'image',
             src: item.imageUrl,
@@ -119,7 +110,17 @@ const RecommendationCard = ({ item }) => {
         React.createElement('div', { key: 'content', className: 'recommendation-card-content' }, [
             React.createElement('h3', { key: 'title', className: 'recommendation-card-title' }, item.title),
             React.createElement('p', { key: 'description', className: 'recommendation-card-description' }, item.description)
-        ])
+        ]),
+        
+        // Conditionally add the link overlay. This is a robust way to make cards clickable.
+        hasLink && React.createElement('a', {
+            key: 'link-overlay',
+            href: item.linkUrl,
+            target: '_blank',
+            rel: 'noopener noreferrer',
+            className: 'card-link-overlay', // New class for styling
+            'aria-label': `Ver recomendación: ${item.title}` // Better accessibility
+        })
     ]);
 };
 
