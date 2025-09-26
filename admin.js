@@ -57,7 +57,7 @@ const AddContentForm = () => {
             if (['imagenes', 'videos'].includes(formData.category)) dataToSave.prompt = formData.prompt;
             if (['descargas', 'tutoriales', 'recomendaciones'].includes(formData.category)) dataToSave.description = formData.description;
             if (formData.category === 'descargas') dataToSave.downloadUrl = formData.downloadUrl;
-            if (formData.category === 'tutoriales') dataToSave.linkUrl = formData.linkUrl;
+            if (['tutoriales', 'recomendaciones'].includes(formData.category)) dataToSave.linkUrl = formData.linkUrl;
             
             await db.collection("content").add(dataToSave);
             setStatus({ message: '¡Entrada guardada con éxito!', type: 'success' });
@@ -92,9 +92,9 @@ const AddContentForm = () => {
                 React.createElement('input', { type: 'url', id: 'downloadUrl', name: 'downloadUrl', value: formData.downloadUrl, onChange: handleChange, required: true })
             ]));
         }
-        if (category === 'tutoriales') {
+        if (['tutoriales', 'recomendaciones'].includes(category)) {
              fields.push(React.createElement('div', { key: 'link-group', className: 'form-group' }, [
-                React.createElement('label', { htmlFor: 'linkUrl' }, 'URL del Tutorial'),
+                React.createElement('label', { htmlFor: 'linkUrl' }, 'URL del Enlace (Sitio web)'),
                 React.createElement('input', { type: 'url', id: 'linkUrl', name: 'linkUrl', value: formData.linkUrl, onChange: handleChange, required: true })
             ]));
         }
