@@ -1,23 +1,15 @@
 // Ya no se usan 'import' porque las librerías se cargan en admin.html
-// Las variables firebase, React y ReactDOM ahora existen globalmente.
+// Las variables firebase, React, ReactDOM y firebaseConfig ahora existen globalmente.
 
 const { useState, useEffect, Fragment } = React;
 
-// --- CONFIGURACIÓN DE FIREBASE INCRUSTADA ---
-const firebaseConfig = {
-    apiKey: "AIzaSyB-GfHrjdFiFEQG1hb38TyAl1X7AIqarnM",
-    authDomain: "theramzes-creations.firebaseapp.com",
-    projectId: "theramzes-creations",
-    storageBucket: "theramzes-creations.firebasestorage.app",
-    messagingSenderId: "497450013723",
-    appId: "1:497450013723:web:1d3019c9c0d7da82a754be",
-    measurementId: "G-1B2TVSMM1Y"
-};
-// --- FIN DE LA CONFIGURACIÓN ---
+// La configuración de Firebase ahora se carga desde config.js en admin.html
+// Esto asegura que la configuración esté centralizada.
 
 // Initialize Firebase
 let db;
 try {
+    // La variable 'firebaseConfig' viene del archivo 'config.js'
     firebase.initializeApp(firebaseConfig);
     db = firebase.firestore();
     console.log('Firebase (compat) inicializado para el panel de Admin');
