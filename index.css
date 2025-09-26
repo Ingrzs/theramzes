@@ -251,7 +251,7 @@ h1, h2, h3 {
     color: inherit;
 }
 
-.recommendation-card:hover {
+a.recommendation-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
 }
@@ -414,6 +414,11 @@ footer {
     color: var(--text-secondary);
     text-decoration: none;
     transition: color 0.3s ease;
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    cursor: pointer;
 }
 
 .footer-link:hover {
@@ -447,4 +452,73 @@ footer {
 .status-message.error {
     background-color: #451a20;
     color: #fca5a5;
+}
+
+/* Modal Styles */
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: var(--bg-secondary);
+    padding: 2rem;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 80vh;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+}
+
+.modal-header h2 {
+    margin-bottom: 0;
+}
+
+.modal-close-button {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 2rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.modal-close-button:hover {
+    color: var(--text-primary);
+}
+
+.modal-body {
+    color: var(--text-secondary);
+}
+
+.modal-body h3 {
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.modal-body p {
+    margin-bottom: 1rem;
+    line-height: 1.7;
 }
