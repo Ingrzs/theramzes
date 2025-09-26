@@ -2,7 +2,18 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import React, { useState, useEffect } from 'https://esm.sh/react@18';
 import ReactDOM from 'https://esm.sh/react-dom@18/client';
-import { firebaseConfig } from './config.js';
+
+// --- CONFIGURACIÓN DE FIREBASE INCRUSTADA ---
+const firebaseConfig = {
+    apiKey: "AIzaSyB-GfHrjdFiFEQG1hb38TyAl1X7AIqarnM",
+    authDomain: "theramzes-creations.firebaseapp.com",
+    projectId: "theramzes-creations",
+    storageBucket: "theramzes-creations.firebasestorage.app",
+    messagingSenderId: "497450013723",
+    appId: "1:49750013723:web:1d3019c9c0d7da82a754be",
+    measurementId: "G-1B2TVSMM1Y"
+};
+// --- FIN DE LA CONFIGURACIÓN ---
 
 // Initialize Firebase
 let app, db;
