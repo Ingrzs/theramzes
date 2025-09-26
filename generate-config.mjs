@@ -1,10 +1,11 @@
 import fs from 'fs';
 import path from 'path';
 
-// Este script se ejecuta durante el proceso de build en Vercel
-console.log('Generating Firebase config file...');
+// --- PASO 1: GENERAR EL ARCHIVO DE CONFIGURACIÓN ---
 
-// Construye el objeto de configuración de Firebase desde las variables de entorno
+console.log('Iniciando el script de construcción...');
+console.log('Paso 1: Generando el archivo de configuración de Firebase...');
+
 const firebaseConfig = {
   apiKey: process.env.PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -15,31 +16,62 @@ const firebaseConfig = {
   measurementId: process.env.PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-// Verifica si todas las variables requeridas están presentes
 const missingVars = Object.entries(firebaseConfig)
   .filter(([, value]) => !value)
   .map(([key]) => key);
 
 if (missingVars.length > 0) {
   console.error('Error: Faltan las siguientes variables de entorno de Firebase:', missingVars.join(', '));
-  // Sale con un código de error para fallar el build
   process.exit(1);
 }
 
-// Crea el contenido del archivo config.js
-const configContent = `// Este archivo es generado automáticamente por generate-config.mjs durante el build.
-// No lo edites manualmente, tus cambios serán sobreescritos.
+const configContent = `// Este archivo es generado automáticamente durante el build.
 export const firebaseConfig = ${JSON.stringify(firebaseConfig, null, 4)};
 `;
 
-// Define la ruta donde se creará el archivo config.js
-const configPath = path.join(process.cwd(), 'config.js');
+console.log('✅ Configuración de Firebase generada en memoria.');
 
-// Escribe el contenido en config.js
+// --- PASO 2: PREPARAR EL DIRECTORIO DE SALIDA 'public' ---
+
 try {
-  fs.writeFileSync(configPath, configContent);
-  console.log('✅ El archivo config.js se ha generado correctamente.');
+    console.log("Paso 2: Creando el directorio de salida 'public'...");
+
+    // Define la ruta del directorio 'public'
+    const publicDir = path.join(process.cwd(), 'public');
+    // Define la ruta para el config.js DENTRO de 'public'
+    const configPath = path.join(publicDir, 'config.js');
+    
+    // Crea la carpeta 'public' si no existe
+    if (!fs.existsSync(publicDir)){
+        fs.mkdirSync(publicDir);
+        console.log("✅ Directorio 'public' creado.");
+    } else {
+        console.log("ℹ️ El directorio 'public' ya existe.");
+    }
+
+    // Escribe el archivo config.js dentro de 'public'
+    fs.writeFileSync(configPath, configContent);
+    console.log(`✅ Archivo config.js escrito en ${configPath}`);
+
+    // Lista de archivos que deben estar en la carpeta 'public'
+    const filesToCopy = ['index.html', 'index.css', 'index.js', 'package.json', 'metadata.json'];
+
+    console.log('Copiando archivos al directorio public...');
+    filesToCopy.forEach(fileName => {
+        const sourcePath = path.join(process.cwd(), fileName);
+        const destPath = path.join(publicDir, fileName);
+        if (fs.existsSync(sourcePath)) {
+            fs.copyFileSync(sourcePath, destPath);
+            console.log(`  - Copiado: ${fileName}`);
+        } else {
+            console.warn(`  - Advertencia: El archivo ${fileName} no se encontró y no fue copiado.`);
+        }
+    });
+
+    console.log('✅ Todos los archivos necesarios han sido copiados a public.');
+    console.log('🚀 Proceso de construcción finalizado con éxito.');
+
 } catch (error) {
-  console.error('Error al escribir el archivo config.js:', error);
-  process.exit(1);
+    console.error('Error durante la preparación del directorio de salida:', error);
+    process.exit(1);
 }
