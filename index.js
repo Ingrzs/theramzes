@@ -91,7 +91,12 @@ const DownloadCard = ({ item }) => {
 };
 
 const RecommendationCard = ({ item }) => {
-    return React.createElement('div', { className: 'recommendation-card' }, [
+    return React.createElement('a', {
+        href: item.linkUrl,
+        target: '_blank',
+        rel: 'noopener noreferrer',
+        className: 'recommendation-card'
+    }, [
         React.createElement('img', {
             key: 'image',
             src: item.imageUrl,
