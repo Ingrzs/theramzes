@@ -93,9 +93,7 @@ const DownloadCard = ({ item }) => {
 const RecommendationCard = ({ item }) => {
     const hasLink = item.linkUrl && typeof item.linkUrl === 'string' && item.linkUrl.trim() !== '';
 
-    return React.createElement('div', {
-        className: `recommendation-card ${hasLink ? 'has-link' : ''}`
-    }, [
+    const cardContent = [
         React.createElement('img', {
             key: 'image',
             src: item.imageUrl,
@@ -106,16 +104,21 @@ const RecommendationCard = ({ item }) => {
         React.createElement('div', { key: 'content', className: 'recommendation-card-content' }, [
             React.createElement('h3', { key: 'title', className: 'recommendation-card-title' }, item.title),
             React.createElement('p', { key: 'description', className: 'recommendation-card-description' }, item.description)
-        ]),
-        hasLink && React.createElement('a', {
-            key: 'link',
+        ])
+    ];
+
+    if (hasLink) {
+        return React.createElement('a', {
             href: item.linkUrl,
             target: '_blank',
             rel: 'noopener noreferrer',
-            className: 'card-link-overlay',
-            'aria-label': `Leer más sobre ${item.title}`
-        })
-    ]);
+            className: 'recommendation-card has-link'
+        }, cardContent);
+    }
+
+    return React.createElement('div', {
+        className: 'recommendation-card'
+    }, cardContent);
 };
 
 
@@ -493,11 +496,14 @@ const App = () => {
         React.createElement('main', { key: 'main', role: 'tabpanel' }, renderContent()),
         React.createElement('footer', { key: 'footer' }, [
             React.createElement('p', { key: 'copyright' }, `© ${new Date().getFullYear()} TheRamzes. Todos los derechos reservados.`),
-            React.createElement('button', {
+            React.createElement('a', {
                 key: 'privacy',
-                onClick: () => setIsPolicyVisible(true),
-                className: 'footer-link',
-                type: 'button'
+                href: '#',
+                onClick: (e) => {
+                    e.preventDefault();
+                    setIsPolicyVisible(true);
+                },
+                className: 'footer-link'
             }, 'Política de Privacidad')
         ]),
         React.createElement(PrivacyPolicyModal, { 
