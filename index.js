@@ -14,19 +14,12 @@ try {
     console.error('Error inicializando Firebase:', error);
 }
 
-// Prevent default hash behavior
-window.addEventListener('hashchange', (e) => {
-    e.preventDefault();
-    history.replaceState(null, null, window.location.pathname);
-});
-
 // Components
 const ImagePromptCard = ({ item }) => {
     const [isPromptVisible, setIsPromptVisible] = useState(false);
     const [copyStatus, setCopyStatus] = useState('Copiar');
 
-    const handleCopy = (e) => {
-        e.stopPropagation();
+    const handleCopy = () => {
         if (item.prompt) {
             navigator.clipboard.writeText(item.prompt).then(() => {
                 setCopyStatus('¡Copiado!');
@@ -35,11 +28,6 @@ const ImagePromptCard = ({ item }) => {
                 setCopyStatus('Error');
             });
         }
-    };
-
-    const handleTogglePrompt = (e) => {
-        e.stopPropagation();
-        setIsPromptVisible(!isPromptVisible);
     };
 
     const promptId = `prompt-${item.id}`;
@@ -57,10 +45,9 @@ const ImagePromptCard = ({ item }) => {
             React.createElement('div', { key: 'actions', className: 'card-actions' },
                 React.createElement('button', {
                     className: 'card-button',
-                    onClick: handleTogglePrompt,
+                    onClick: () => setIsPromptVisible(!isPromptVisible),
                     'aria-expanded': isPromptVisible,
-                    'aria-controls': promptId,
-                    type: 'button'
+                    'aria-controls': promptId
                 }, isPromptVisible ? 'Ocultar Prompt' : 'Ver Prompt')
             )
         ]),
@@ -72,8 +59,7 @@ const ImagePromptCard = ({ item }) => {
             React.createElement('button', {
                 key: 'copy',
                 className: 'copy-button',
-                onClick: handleCopy,
-                type: 'button'
+                onClick: handleCopy
             }, copyStatus),
             React.createElement('p', { key: 'text' }, item.prompt)
         ])
@@ -105,43 +91,9 @@ const DownloadCard = ({ item }) => {
 };
 
 const RecommendationCard = ({ item }) => {
-    const hasLink = item.linkUrl && typeof item.linkUrl === 'string' && item.linkUrl.trim() !== '' && item.linkUrl !== '#';
-    
-    const handleCardClick = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        console.log('🔥 RECOMMENDATION CARD CLICKED!');
-        console.log('Item:', item);
-        console.log('Has link:', hasLink);
-        console.log('Link URL:', item.linkUrl);
-        
-        if (hasLink) {
-            try {
-                console.log('🚀 Opening link:', item.linkUrl);
-                window.open(item.linkUrl, '_blank', 'noopener,noreferrer');
-            } catch (error) {
-                console.error('Error opening link:', error);
-                alert(`Error al abrir el enlace: ${error.message}`);
-            }
-        } else {
-            console.log('❌ No valid link available');
-            alert(`No hay enlace válido para "${item.title}"`);
-        }
-    };
+    const hasLink = item.linkUrl && typeof item.linkUrl === 'string' && item.linkUrl.trim() !== '';
 
-    const cardProps = {
-        className: `recommendation-card ${hasLink ? 'clickable' : 'no-link'}`,
-        style: { 
-            cursor: hasLink ? 'pointer' : 'default',
-            border: hasLink ? '2px solid #6a0dad' : '1px solid #3a3a3a'
-        }
-    };
-
-    // Always add click handler for debugging
-    cardProps.onClick = handleCardClick;
-
-    return React.createElement('div', cardProps, [
+    const cardContent = [
         React.createElement('img', {
             key: 'image',
             src: item.imageUrl,
@@ -151,21 +103,20 @@ const RecommendationCard = ({ item }) => {
         }),
         React.createElement('div', { key: 'content', className: 'recommendation-card-content' }, [
             React.createElement('h3', { key: 'title', className: 'recommendation-card-title' }, item.title),
-            React.createElement('p', { key: 'description', className: 'recommendation-card-description' }, item.description),
-            React.createElement('div', { 
-                key: 'status', 
-                style: { 
-                    fontSize: '0.8em', 
-                    marginTop: '0.5rem',
-                    padding: '0.25rem 0.5rem',
-                    borderRadius: '4px',
-                    backgroundColor: hasLink ? '#1a5a1a' : '#5a1a1a',
-                    color: hasLink ? '#90EE90' : '#FF6B6B',
-                    fontWeight: 'bold'
-                } 
-            }, hasLink ? '🔗 CLIC PARA ABRIR' : '❌ SIN ENLACE')
+            React.createElement('p', { key: 'description', className: 'recommendation-card-description' }, item.description)
         ])
-    ]);
+    ];
+
+    if (hasLink) {
+        return React.createElement('a', {
+            href: item.linkUrl,
+            target: '_blank',
+            rel: 'noopener noreferrer',
+            className: 'recommendation-card'
+        }, cardContent);
+    }
+
+    return React.createElement('div', { className: 'recommendation-card' }, cardContent);
 };
 
 const TutorialCard = ({ item }) => {
@@ -194,11 +145,6 @@ const TutorialCard = ({ item }) => {
 };
 
 const AboutMe = ({ setActiveTab }) => {
-    const handleTabClick = (tab) => {
-        console.log('Changing tab to:', tab);
-        setActiveTab(tab);
-    };
-
     return React.createElement('div', { className: 'about-me-container' }, [
         React.createElement('img', {
             key: 'profile',
@@ -215,9 +161,8 @@ const AboutMe = ({ setActiveTab }) => {
         React.createElement('div', { key: 'links', className: 'links-container' }, [
             React.createElement('button', {
                 key: 'blog',
-                onClick: () => handleTabClick('imagenes'),
-                className: 'social-link',
-                type: 'button'
+                onClick: () => setActiveTab('imagenes'),
+                className: 'social-link'
             }, 'Mi Blog'),
             React.createElement('a', {
                 key: 'youtube',
@@ -238,17 +183,12 @@ const AboutMe = ({ setActiveTab }) => {
                 href: '#',
                 target: '_blank',
                 rel: 'noopener noreferrer',
-                className: 'social-link',
-                onClick: (e) => {
-                    e.preventDefault();
-                    alert('Productos afiliados próximamente');
-                }
+                className: 'social-link'
             }, 'Productos Afiliados'),
             React.createElement('button', {
                 key: 'contacto',
-                onClick: () => handleTabClick('contacto'),
-                className: 'social-link',
-                type: 'button'
+                onClick: () => setActiveTab('contacto'),
+                className: 'social-link'
             }, 'Contacto por Email')
         ])
     ]);
@@ -257,13 +197,12 @@ const AboutMe = ({ setActiveTab }) => {
 const ContactForm = () => {
     const handleSubmit = (e) => {
         e.preventDefault();
-        console.log('Form submitted');
         alert('¡Formulario enviado! (Funcionalidad simulada)');
     };
 
     return React.createElement('div', { className: 'contact-container' }, [
         React.createElement('h2', { key: 'title' }, 'Contacto'),
-        React.createElement('form', { key: 'form', onSubmit: handleSubmit }, [
+        React.createElement('form', { key: 'form', onSubmit: handleSubmit, className: 'contact-form' }, [
             React.createElement('div', { key: 'name-group', className: 'form-group' }, [
                 React.createElement('label', { key: 'name-label', htmlFor: 'name' }, 'Nombre'),
                 React.createElement('input', {
@@ -323,11 +262,8 @@ const PrivacyPolicyModal = ({ isVisible, onClose }) => {
     useEffect(() => {
         if (!isVisible) return;
         
-        console.log('Modal is now visible');
-        
         const handleKeyDown = (event) => {
             if (event.key === 'Escape') {
-                console.log('Escape key pressed, closing modal');
                 onClose();
             }
         };
@@ -336,49 +272,29 @@ const PrivacyPolicyModal = ({ isVisible, onClose }) => {
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, [isVisible, onClose]);
 
-    if (!isVisible) {
-        return null;
-    }
-
-    const handleBackdropClick = (e) => {
-        console.log('Backdrop clicked');
-        if (e.target === e.currentTarget) {
-            onClose();
-        }
-    };
-
-    const handleCloseClick = (e) => {
-        console.log('🔥 CLOSE BUTTON CLICKED!');
-        e.preventDefault();
-        e.stopPropagation();
-        onClose();
-    };
+    if (!isVisible) return null;
 
     return React.createElement('div', { 
         className: 'modal-backdrop', 
-        onClick: handleBackdropClick,
-        style: { zIndex: 10000 }
+        onClick: (e) => {
+            // Solo cerrar si se hace clic en el backdrop, no en el contenido
+            if (e.target === e.currentTarget) {
+                onClose();
+            }
+        }
     },
         React.createElement('div', { 
-            className: 'modal-content',
-            onClick: (e) => e.stopPropagation()
+            className: 'modal-content', 
+            onClick: (e) => e.stopPropagation() 
         }, [
             React.createElement('div', { key: 'header', className: 'modal-header' }, [
                 React.createElement('h2', { key: 'title' }, 'Política de Privacidad'),
                 React.createElement('button', { 
                     key: 'close', 
                     className: 'modal-close-button', 
-                    onClick: handleCloseClick,
+                    onClick: onClose, 
                     'aria-label': 'Cerrar',
-                    type: 'button',
-                    style: { 
-                        background: 'red', 
-                        color: 'white', 
-                        border: 'none',
-                        fontSize: '2rem',
-                        cursor: 'pointer',
-                        padding: '0.5rem'
-                    }
+                    type: 'button'
                 }, '×')
             ]),
             React.createElement('div', { key: 'body', className: 'modal-body' }, [
@@ -386,25 +302,32 @@ const PrivacyPolicyModal = ({ isVisible, onClose }) => {
                 React.createElement('p', { key: 'intro' }, 'Bienvenido a TheRamzes - AI Prompts & Creations. Su privacidad es de suma importancia para nosotros. Esta Política de Privacidad describe qué datos recopilamos y cómo los usamos y protegemos.'),
 
                 React.createElement('h3', { key: 'h-info' }, 'Información que Recopilamos'),
-                React.createElement('p', { key: 'p-info1' }, 'Datos de Contacto: Si decide contactarnos a través de nuestro formulario, recopilaremos su nombre y dirección de correo electrónico para poder responder a su consulta. No utilizaremos esta información para ningún otro propósito sin su consentimiento explícito.'),
-                React.createElement('p', { key: 'p-info2' }, 'Datos de Uso (Analytics): Utilizamos servicios como Firebase Analytics (un producto de Google) para recopilar información anónima sobre cómo los visitantes interactúan con nuestro sitio web.'),
+                React.createElement('p', { key: 'p-info1' }, [
+                    React.createElement('strong', { key: 'bold1' }, 'Datos de Contacto: '),
+                    'Si decide contactarnos a través de nuestro formulario, recopilaremos su nombre y dirección de correo electrónico para poder responder a su consulta. No utilizaremos esta información para ningún otro propósito sin su consentimiento explícito.'
+                ]),
+                React.createElement('p', { key: 'p-info2' }, [
+                    React.createElement('strong', { key: 'bold2' }, 'Datos de Uso (Analytics): '),
+                    'Utilizamos servicios como Firebase Analytics (un producto de Google) para recopilar información anónima sobre cómo los visitantes interactúan con nuestro sitio web. Esto incluye datos como las páginas que visita, el tiempo que pasa en el sitio y el tipo de dispositivo que utiliza. Esta información nos ayuda a mejorar la experiencia del usuario y el contenido que ofrecemos. No se recopila información de identificación personal.'
+                ]),
                 
                 React.createElement('h3', { key: 'h-usage' }, 'Cómo Usamos su Información'),
                 React.createElement('p', { key: 'p-usage' }, 'Utilizamos la información que recopilamos para: responder a sus consultas, mejorar y optimizar nuestro sitio web, y analizar tendencias de uso para crear contenido más relevante.'),
 
-                React.createElement('button', {
-                    key: 'test-close',
-                    onClick: handleCloseClick,
-                    style: {
-                        background: 'blue',
-                        color: 'white',
-                        padding: '1rem',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        marginTop: '1rem'
-                    }
-                }, 'CERRAR MODAL (PRUEBA)')
+                React.createElement('h3', { key: 'h-cookies' }, 'Cookies'),
+                React.createElement('p', { key: 'p-cookies' }, 'Nuestro sitio utiliza cookies necesarias para su funcionamiento y para los servicios de análisis proporcionados por Google (Firebase). Las cookies son pequeños archivos de texto que se almacenan en su dispositivo. Puede configurar su navegador para que rechace las cookies, pero esto podría afectar la funcionalidad del sitio.'),
+
+                React.createElement('h3', { key: 'h-third-party' }, 'Enlaces a Terceros'),
+                React.createElement('p', { key: 'p-third-party' }, 'Este sitio puede contener enlaces a sitios web de terceros (por ejemplo, en las secciones de "Recomendaciones" o "Tutoriales"). No somos responsables de las prácticas de privacidad ni del contenido de estos sitios externos. Le recomendamos leer sus políticas de privacidad.'),
+
+                React.createElement('h3', { key: 'h-security' }, 'Seguridad de los Datos'),
+                React.createElement('p', { key: 'p-security' }, 'Implementamos medidas de seguridad razonables para proteger la información contra el acceso, alteración o destrucción no autorizados. Sin embargo, ningún método de transmisión por Internet es 100% seguro.'),
+
+                React.createElement('h3', { key: 'h-changes' }, 'Cambios a esta Política'),
+                React.createElement('p', { key: 'p-changes' }, 'Nos reservamos el derecho de modificar esta política de privacidad en cualquier momento. Cualquier cambio será efectivo inmediatamente después de su publicación en esta página.'),
+
+                React.createElement('h3', { key: 'h-contact' }, 'Contacto'),
+                React.createElement('p', { key: 'p-contact' }, 'Si tiene alguna pregunta sobre esta Política de Privacidad, puede contactarnos a través del formulario de contacto disponible en este sitio.')
             ])
         ])
     );
@@ -441,18 +364,6 @@ const App = () => {
 
     const tabs = ['imagenes', 'videos', 'descargas', 'recomendaciones', 'tutoriales', 'sobre mi', 'contacto'];
 
-    // Prevent hash changes
-    useEffect(() => {
-        const preventHashChange = (e) => {
-            if (window.location.hash) {
-                history.replaceState(null, null, window.location.pathname);
-            }
-        };
-        
-        window.addEventListener('hashchange', preventHashChange);
-        return () => window.removeEventListener('hashchange', preventHashChange);
-    }, []);
-
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
@@ -470,23 +381,7 @@ const App = () => {
                 
                 setData(contentList);
                 console.log(`Datos cargados: ${contentList.length} elementos`);
-                console.log('📊 TODOS LOS DATOS:', contentList);
-                
-                // Log específico para recomendaciones
-                const recommendations = contentList.filter(item => item.category === 'recomendaciones');
-                console.log('🎯 RECOMENDACIONES ENCONTRADAS:', recommendations);
-                
-                // Log detallado de cada recomendación
-                recommendations.forEach((rec, index) => {
-                    console.log(`📝 Recomendación ${index + 1}:`, {
-                        id: rec.id,
-                        title: rec.title,
-                        category: rec.category,
-                        linkUrl: rec.linkUrl,
-                        hasValidLink: rec.linkUrl && rec.linkUrl.trim() !== '' && rec.linkUrl !== '#'
-                    });
-                });
-                
+                console.log('Datos:', contentList); // Para debug
             } catch (err) {
                 console.error("Error al cargar datos:", err);
                 setError(err);
@@ -516,22 +411,7 @@ const App = () => {
         return names[tab] || tab.charAt(0).toUpperCase() + tab.slice(1);
     };
 
-    const handlePrivacyClick = (e) => {
-        console.log('🔥 PRIVACY POLICY BUTTON CLICKED!');
-        e.preventDefault();
-        e.stopPropagation();
-        setIsPolicyVisible(true);
-        console.log('Modal should be visible now:', true);
-    };
-
-    const handleCloseModal = () => {
-        console.log('🔥 CLOSING MODAL!');
-        setIsPolicyVisible(false);
-    };
-
     const renderContent = () => {
-        console.log(`🎨 Rendering content for tab: ${activeTab}`);
-        
         // Handle static pages first
         if (activeTab === 'sobre mi') return React.createElement(AboutMe, { setActiveTab });
         if (activeTab === 'contacto') return React.createElement(ContactForm);
@@ -548,7 +428,6 @@ const App = () => {
 
         // Filter data by category
         const filteredData = data.filter(item => item.category === activeTab);
-        console.log(`🔍 Filtered data for ${activeTab}:`, filteredData);
 
         // Handle empty state
         if (filteredData.length === 0) {
@@ -575,23 +454,17 @@ const App = () => {
             case 'recomendaciones':
                 CardComponent = RecommendationCard;
                 containerClassName = 'recommendation-list';
-                console.log('🎯 Using RecommendationCard component');
                 break;
             default:
                 CardComponent = ImagePromptCard;
         }
 
-        console.log(`🏗️ Creating ${filteredData.length} cards with ${CardComponent.name || 'Unknown'} component`);
-
         return React.createElement('div', { className: containerClassName },
-            filteredData.map((item, index) => {
-                console.log(`🃏 Creating card ${index + 1}:`, item);
-                return React.createElement(CardComponent, { key: item.id, item });
-            })
+            filteredData.map(item => 
+                React.createElement(CardComponent, { key: item.id, item })
+            )
         );
     };
-
-    console.log('🔄 App rendering, isPolicyVisible:', isPolicyVisible);
 
     return React.createElement('div', {}, [
         React.createElement('header', { key: 'header', className: 'app-header' }, [
@@ -612,11 +485,7 @@ const App = () => {
                         role: 'tab',
                         'aria-selected': activeTab === tab,
                         className: `tab-button ${activeTab === tab ? 'active' : ''}`,
-                        onClick: () => {
-                            console.log('Tab clicked:', tab);
-                            setActiveTab(tab);
-                        },
-                        type: 'button'
+                        onClick: () => setActiveTab(tab)
                     }, formatTabName(tab))
                 )
             )
@@ -624,46 +493,25 @@ const App = () => {
         React.createElement('main', { key: 'main', role: 'tabpanel' }, renderContent()),
         React.createElement('footer', { key: 'footer' }, [
             React.createElement('p', { key: 'copyright' }, `© ${new Date().getFullYear()} TheRamzes. Todos los derechos reservados.`),
-            React.createElement('button', {
+            React.createElement('a', {
                 key: 'privacy',
-                onClick: handlePrivacyClick,
+                href: '#',
+                onClick: (e) => {
+                    e.preventDefault();
+                    setIsPolicyVisible(true);
+                },
                 className: 'footer-link',
-                type: 'button',
-                style: {
-                    background: 'orange',
-                    color: 'black',
-                    padding: '0.5rem 1rem',
-                    border: '2px solid red',
-                    borderRadius: '4px',
-                    cursor: 'pointer'
-                }
-            }, '🔥 POLÍTICA DE PRIVACIDAD (PRUEBA)')
+                role: 'button'
+            }, 'Política de Privacidad')
         ]),
         React.createElement(PrivacyPolicyModal, { 
             key: 'modal',
             isVisible: isPolicyVisible, 
-            onClose: handleCloseModal
+            onClose: () => setIsPolicyVisible(false) 
         })
     ]);
 };
 
-// Debug: Add test button
-setTimeout(() => {
-    const testDiv = document.createElement('div');
-    testDiv.style.position = 'fixed';
-    testDiv.style.top = '10px';
-    testDiv.style.right = '10px';
-    testDiv.style.zIndex = '99999';
-    testDiv.style.background = 'lime';
-    testDiv.style.padding = '10px';
-    testDiv.style.borderRadius = '5px';
-    testDiv.innerHTML = '<button onclick="alert(\'TEST WORKS!\'); console.log(\'Direct test works!\')">🧪 TEST CLICK</button>';
-    document.body.appendChild(testDiv);
-    console.log('🧪 Test button added');
-}, 2000);
-
 // Render the app
-console.log('🚀 Initializing React app...');
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(React.createElement(App));
-console.log('✅ React app initialized');
