@@ -4,7 +4,7 @@
 
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import { getFirestore, collection, getDocs, query, orderBy, limit, startAfter } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getFirestore, collection, getDocs, getDoc, doc, query, orderBy, limit, startAfter } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import React, { useState, useEffect, useMemo, useCallback } from 'https://esm.sh/react@18';
 import ReactDOM from 'https://esm.sh/react-dom@18/client';
 import Fuse from 'https://esm.sh/fuse.js@7.0.0';
@@ -178,7 +178,7 @@ const AffiliateCard = ({ item }) => {
         React.createElement('div', { key: 'content', className: 'card-content' }, [
             React.createElement('h3', { key: 'title', className: 'card-title' }, item.title),
             React.createElement('p', { key: 'description', className: 'download-text' }, item.description),
-            React.createElement('p', { key: 'disclaimer', className: 'affiliate-disclaimer' }, 'Como afiliado, gano por compras elegibles. Esto no afecta el precio que pagas.'),
+            item.disclaimer && React.createElement('p', { key: 'disclaimer', className: 'affiliate-disclaimer' }, item.disclaimer),
             React.createElement('div', { key: 'actions', className: 'card-actions' },
                 React.createElement('a', {
                     key: 'link',
@@ -414,13 +414,13 @@ const ErrorState = ({ error }) => {
     ]);
 };
 
-const ResourcesPage = ({ allData }) => {
+const ResourcesPage = ({ allData, resourcesDisclaimer }) => {
     const recommendations = allData.filter(item => item.category === 'recomendaciones');
     const affiliates = allData.filter(item => item.category === 'afiliados');
 
     return React.createElement('div', { className: 'resources-container' }, [
         React.createElement('h2', { key: 'header', className: 'resources-header' }, 'Recursos para Creadores'),
-        React.createElement('p', { key: 'disclaimer', className: 'resources-disclaimer' }, 'Algunos enlaces en esta sección son de afiliado, lo que significa que puedo recibir una pequeña comisión si decides realizar una compra sin ningún costo adicional para ti. Esto me ayuda a seguir creando contenido gratuito y de calidad.'),
+        resourcesDisclaimer && React.createElement('p', { key: 'disclaimer', className: 'resources-disclaimer' }, resourcesDisclaimer),
         
         React.createElement('h3', { key: 'rec-subheader', className: 'resources-subheader' }, 'Software y Plataformas Esenciales'),
         recommendations.length > 0
@@ -451,6 +451,7 @@ const App = () => {
     const [isPolicyVisible, setIsPolicyVisible] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
+    const [resourcesDisclaimer, setResourcesDisclaimer] = useState('');
 
     const tabs = ['imagenes', 'videos', 'descargas', 'tutoriales', 'recursos', 'sobre mi', 'contacto'];
     const CONTENT_PER_PAGE = 12;
@@ -479,6 +480,19 @@ const App = () => {
         }
     }, []);
 
+    const fetchSettings = useCallback(async () => {
+        if (!db) return;
+        try {
+            const settingsDocRef = doc(db, 'settings', 'disclaimers');
+            const docSnap = await getDoc(settingsDocRef);
+            if (docSnap.exists()) {
+                setResourcesDisclaimer(docSnap.data().resourcesPageDisclaimer || '');
+            }
+        } catch (err) {
+            console.error("Error fetching settings:", err);
+        }
+    }, []);
+
     const fetchData = useCallback(async (startAfterDoc = null) => {
         if (!db) {
             setError(new Error('Firebase no se inicializó correctamente'));
@@ -489,6 +503,7 @@ const App = () => {
         const isInitialLoad = !startAfterDoc;
         if (isInitialLoad) {
             setLoading(true);
+            fetchSettings(); // Cargar la configuración al inicio
         } else {
             setLoadingMore(true);
         }
@@ -528,7 +543,7 @@ const App = () => {
                 setLoadingMore(false);
             }
         }
-    }, []);
+    }, [fetchSettings]);
 
 
     useEffect(() => {
@@ -617,7 +632,7 @@ const App = () => {
         
         if (activeTab === 'sobre mi') return React.createElement(AboutMe, { setActiveTab });
         if (activeTab === 'contacto') return React.createElement(ContactForm);
-        if (activeTab === 'recursos') return React.createElement(ResourcesPage, { allData: data });
+        if (activeTab === 'recursos') return React.createElement(ResourcesPage, { allData: data, resourcesDisclaimer: resourcesDisclaimer });
 
         const filteredData = data.filter(item => item.category === activeTab);
 
