@@ -4,8 +4,11 @@
   "description": "AI Prompts & Creations",
   "type": "module",
   "scripts": {
-    "build": "node generate-config.mjs"
+    "build": "replace-in-file \"__FIREBASE_API_KEY__\" \"$PUBLIC_FIREBASE_API_KEY\" index.js admin.html"
   },
   "author": "TheRamzes",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "replace-in-file": "^7.1.0"
+  }
 }
