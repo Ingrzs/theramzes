@@ -94,9 +94,17 @@ const DownloadCard = ({ item }) => {
 
 const RecommendationCard = ({ item }) => {
     const hasLink = item.linkUrl && typeof item.linkUrl === 'string' && item.linkUrl.trim() !== '';
+    const Component = hasLink ? 'a' : 'div';
+    const props = {
+        className: 'recommendation-card',
+    };
+    if (hasLink) {
+        props.href = item.linkUrl;
+        props.target = '_blank';
+        props.rel = 'noopener noreferrer';
+    }
 
-    // The content is the same regardless of whether it's a link or not
-    const cardContent = [
+    return React.createElement(Component, props, [
         React.createElement('img', {
             key: 'image',
             src: item.imageUrl,
@@ -108,22 +116,9 @@ const RecommendationCard = ({ item }) => {
             React.createElement('h3', { key: 'title', className: 'recommendation-card-title' }, item.title),
             React.createElement('p', { key: 'description', className: 'recommendation-card-description' }, item.description)
         ])
-    ];
-
-    // Determine the root component type and its properties
-    const componentType = hasLink ? 'a' : 'div';
-    const props = {
-        className: 'recommendation-card'
-    };
-
-    if (hasLink) {
-        props.href = item.linkUrl;
-        props.target = '_blank';
-        props.rel = 'noopener noreferrer';
-    }
-
-    return React.createElement(componentType, props, cardContent);
+    ]);
 };
+
 
 const TutorialCard = ({ item }) => {
     return React.createElement('div', { className: 'card' }, [
@@ -264,6 +259,53 @@ const ContactForm = () => {
     ]);
 };
 
+const PrivacyPolicyModal = ({ onClose }) => {
+    useEffect(() => {
+        const handleKeyDown = (event) => {
+            if (event.key === 'Escape') {
+                onClose();
+            }
+        };
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [onClose]);
+
+    return React.createElement('div', { className: 'modal-backdrop', onClick: onClose },
+        React.createElement('div', { className: 'modal-content', onClick: e => e.stopPropagation() }, [
+            React.createElement('div', { key: 'header', className: 'modal-header' }, [
+                React.createElement('h2', { key: 'title' }, 'Política de Privacidad'),
+                React.createElement('button', { key: 'close', className: 'modal-close-button', onClick: onClose, 'aria-label': 'Cerrar' }, '×')
+            ]),
+            React.createElement('div', { key: 'body', className: 'modal-body' }, [
+                React.createElement('p', { key: 'date' }, `Última actualización: ${new Date().toLocaleDateString('es-ES')}`),
+                React.createElement('p', { key: 'intro' }, 'Bienvenido a TheRamzes - AI Prompts & Creations. Su privacidad es de suma importancia para nosotros. Esta Política de Privacidad describe qué datos recopilamos y cómo los usamos y protegemos.'),
+
+                React.createElement('h3', { key: 'h-info' }, 'Información que Recopilamos'),
+                React.createElement('p', { key: 'p-info1' }, React.createElement('strong', null, 'Datos de Contacto: '), 'Si decide contactarnos a través de nuestro formulario, recopilaremos su nombre y dirección de correo electrónico para poder responder a su consulta. No utilizaremos esta información para ningún otro propósito sin su consentimiento explícito.'),
+                React.createElement('p', { key: 'p-info2' }, React.createElement('strong', null, 'Datos de Uso (Analytics): '), 'Utilizamos servicios como Firebase Analytics (un producto de Google) para recopilar información anónima sobre cómo los visitantes interactúan con nuestro sitio web. Esto incluye datos como las páginas que visita, el tiempo que pasa en el sitio y el tipo de dispositivo que utiliza. Esta información nos ayuda a mejorar la experiencia del usuario y el contenido que ofrecemos. No se recopila información de identificación personal.'),
+                
+                React.createElement('h3', { key: 'h-usage' }, 'Cómo Usamos su Información'),
+                React.createElement('p', { key: 'p-usage' }, 'Utilizamos la información que recopilamos para: responder a sus consultas, mejorar y optimizar nuestro sitio web, y analizar tendencias de uso para crear contenido más relevante.'),
+
+                React.createElement('h3', { key: 'h-cookies' }, 'Cookies'),
+                React.createElement('p', { key: 'p-cookies' }, 'Nuestro sitio utiliza cookies necesarias para su funcionamiento y para los servicios de análisis proporcionados por Google (Firebase). Las cookies son pequeños archivos de texto que se almacenan en su dispositivo. Puede configurar su navegador para que rechace las cookies, pero esto podría afectar la funcionalidad del sitio.'),
+
+                React.createElement('h3', { key: 'h-third-party' }, 'Enlaces a Terceros'),
+                React.createElement('p', { key: 'p-third-party' }, 'Este sitio puede contener enlaces a sitios web de terceros (por ejemplo, en las secciones de "Recomendaciones" o "Tutoriales"). No somos responsables de las prácticas de privacidad ni del contenido de estos sitios externos. Le recomendamos leer sus políticas de privacidad.'),
+
+                React.createElement('h3', { key: 'h-security' }, 'Seguridad de los Datos'),
+                React.createElement('p', { key: 'p-security' }, 'Implementamos medidas de seguridad razonables para proteger la información contra el acceso, alteración o destrucción no autorizados. Sin embargo, ningún método de transmisión por Internet es 100% seguro.'),
+
+                React.createElement('h3', { key: 'h-changes' }, 'Cambios a esta Política'),
+                React.createElement('p', { key: 'p-changes' }, 'Nos reservamos el derecho de modificar esta política de privacidad en cualquier momento. Cualquier cambio será efectivo inmediatamente después de su publicación en esta página.'),
+
+                React.createElement('h3', { key: 'h-contact' }, 'Contacto'),
+                React.createElement('p', { key: 'p-contact' }, 'Si tiene alguna pregunta sobre esta Política de Privacidad, puede contactarnos a través del formulario de contacto disponible en este sitio.')
+            ])
+        ])
+    );
+};
+
 const EmptyState = ({ message }) => {
     return React.createElement('div', { className: 'empty-state-container' },
         React.createElement('p', {}, message)
@@ -291,6 +333,7 @@ const App = () => {
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [isPolicyVisible, setIsPolicyVisible] = useState(false);
 
     const tabs = ['imagenes', 'videos', 'descargas', 'recomendaciones', 'tutoriales', 'sobre mi', 'contacto'];
 
@@ -423,12 +466,13 @@ const App = () => {
         React.createElement('main', { key: 'main', role: 'tabpanel' }, renderContent()),
         React.createElement('footer', { key: 'footer' }, [
             React.createElement('p', { key: 'copyright' }, `© ${new Date().getFullYear()} TheRamzes. Todos los derechos reservados.`),
-            React.createElement('a', {
+            React.createElement('button', {
                 key: 'privacy',
-                href: '#privacy',
+                onClick: () => setIsPolicyVisible(true),
                 className: 'footer-link'
             }, 'Política de Privacidad')
-        ])
+        ]),
+        isPolicyVisible && React.createElement(PrivacyPolicyModal, { onClose: () => setIsPolicyVisible(false) })
     ]);
 };
 
