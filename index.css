@@ -419,3 +419,32 @@ footer {
 .footer-link:hover {
     color: var(--accent-secondary);
 }
+
+/* Admin Panel Status Styles */
+.submit-button:disabled {
+    background-color: var(--bg-tertiary);
+    cursor: not-allowed;
+}
+
+.status-message {
+    padding: 0.75rem;
+    border-radius: 6px;
+    text-align: center;
+    margin-top: 1rem;
+    font-weight: 500;
+}
+
+.status-message.loading {
+    background-color: var(--bg-tertiary);
+    color: var(--text-secondary);
+}
+
+.status-message.success {
+    background-color: #164b35;
+    color: #a7f3d0;
+}
+
+.status-message.error {
+    background-color: #451a20;
+    color: #fca5a5;
+}
