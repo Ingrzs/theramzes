@@ -1,7 +1,10 @@
+
+
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import React, { useState, useEffect } from 'https://esm.sh/react@18';
+import React, { useState, useEffect, useMemo } from 'https://esm.sh/react@18';
 import ReactDOM from 'https://esm.sh/react-dom@18/client';
+import Fuse from 'https://esm.sh/fuse.js@7.0.0';
 
 // --- CONFIGURACIÓN DE FIREBASE INCRUSTADA ---
 const firebaseConfig = {
@@ -10,7 +13,7 @@ const firebaseConfig = {
     projectId: "theramzes-creations",
     storageBucket: "theramzes-creations.firebasestorage.app",
     messagingSenderId: "497450013723",
-    appId: "1:49750013723:web:1d3019c9c0d7da82a754be",
+    appId: "1:497450013723:web:1d3019c9c0d7da82a754be",
     measurementId: "G-1B2TVSMM1Y"
 };
 // --- FIN DE LA CONFIGURACIÓN ---
@@ -21,7 +24,8 @@ try {
     app = initializeApp(firebaseConfig);
     db = getFirestore(app);
     console.log('Firebase inicializado correctamente');
-} catch (error) {
+} catch (error)
+{
     console.error('Error inicializando Firebase:', error);
 }
 
@@ -158,47 +162,71 @@ const TutorialCard = ({ item }) => {
     ]);
 };
 
+const AffiliateCard = ({ item }) => {
+    return React.createElement('div', { className: 'card' }, [
+        React.createElement('img', {
+            key: 'image',
+            src: item.imageUrl,
+            alt: item.title,
+            className: 'card-image',
+            loading: 'lazy'
+        }),
+        React.createElement('div', { key: 'content', className: 'card-content' }, [
+            React.createElement('h3', { key: 'title', className: 'card-title' }, item.title),
+            React.createElement('p', { key: 'description', className: 'download-text' }, item.description),
+            React.createElement('p', { key: 'disclaimer', className: 'affiliate-disclaimer' }, 'Como afiliado, gano por compras elegibles. Esto no afecta el precio que pagas.'),
+            React.createElement('div', { key: 'actions', className: 'card-actions' },
+                React.createElement('a', {
+                    key: 'link',
+                    href: item.linkUrl,
+                    target: '_blank',
+                    rel: 'noopener noreferrer sponsored',
+                    className: 'card-button'
+                }, 'Ver Producto')
+            )
+        ])
+    ]);
+};
+
 const AboutMe = ({ setActiveTab }) => {
     return React.createElement('div', { className: 'about-me-container' }, [
         React.createElement('img', {
             key: 'profile',
-            src: 'https://storage.googleapis.com/maker-suite-guides/codelab-react-app/profile_pic.png',
+            src: 'https://yt3.googleusercontent.com/UsEE3B7HZCqYlFrE6zI601Pq-_moV7q1diFWggkrSM5yI7imCvZWnBAjnOy5gp6_xx1LAZTUHg=s160-c-k-c0x00ffffff-no-rj',
             alt: 'Profile',
             className: 'profile-pic',
             loading: 'lazy'
         }),
         React.createElement('h2', { key: 'name' }, 'TheRamzes'),
-        React.createElement('p', { 
-            key: 'bio', 
-            className: 'bio' 
+        React.createElement('p', {
+            key: 'bio',
+            className: 'bio'
         }, 'Creador de contenido, explorador de IA y apasionado por la tecnología. Aquí comparto mis creaciones y recursos favoritos.'),
         React.createElement('div', { key: 'links', className: 'links-container' }, [
-            React.createElement('button', {
-                key: 'blog',
-                onClick: () => setActiveTab('imagenes'),
-                className: 'social-link'
-            }, 'Mi Blog'),
             React.createElement('a', {
                 key: 'youtube',
-                href: 'https://youtube.com',
+                href: 'https://www.youtube.com/@TheRamzes',
                 target: '_blank',
                 rel: 'noopener noreferrer',
                 className: 'social-link'
             }, 'YouTube'),
             React.createElement('a', {
                 key: 'tiktok',
-                href: 'https://tiktok.com',
+                href: 'https://www.tiktok.com/@theramzestech',
                 target: '_blank',
                 rel: 'noopener noreferrer',
                 className: 'social-link'
             }, 'TikTok'),
-            React.createElement('a', {
-                key: 'productos',
-                href: '#',
-                target: '_blank',
-                rel: 'noopener noreferrer',
+            React.createElement('button', {
+                key: 'creaciones',
+                onClick: () => setActiveTab('imagenes'),
                 className: 'social-link'
-            }, 'Productos Afiliados'),
+            }, 'Explorar Creaciones'),
+            React.createElement('button', {
+                key: 'recursos-fav',
+                onClick: () => setActiveTab('recursos'),
+                className: 'social-link'
+            }, 'Explora mis recursos favoritos'),
             React.createElement('button', {
                 key: 'contacto',
                 onClick: () => setActiveTab('contacto'),
@@ -211,7 +239,18 @@ const AboutMe = ({ setActiveTab }) => {
 const ContactForm = () => {
     const handleSubmit = (e) => {
         e.preventDefault();
-        alert('¡Formulario enviado! (Funcionalidad simulada)');
+        const formData = new FormData(e.target);
+        const subject = formData.get('subject');
+        const message = formData.get('message');
+        const name = formData.get('name');
+        const email = formData.get('email');
+
+        const body = `Nombre: ${name}\nCorreo: ${email}\n\nMensaje:\n${message}`;
+        
+        const mailtoLink = `mailto:theramzesyt@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+        window.location.href = mailtoLink;
+        alert('Se abrirá tu cliente de correo para enviar el mensaje. ¡Gracias!');
     };
 
     return React.createElement('div', { className: 'contact-container' }, [
@@ -243,14 +282,15 @@ const ContactForm = () => {
                     key: 'subject-select',
                     id: 'subject',
                     name: 'subject',
-                    required: true
+                    required: true,
+                    defaultValue: ""
                 }, [
-                    React.createElement('option', { key: 'empty', value: '' }, 'Selecciona un motivo...'),
-                    React.createElement('option', { key: 'consulta', value: 'consulta' }, 'Consulta General'),
-                    React.createElement('option', { key: 'colaboracion', value: 'colaboracion' }, 'Propuesta de Colaboración'),
-                    React.createElement('option', { key: 'reporte', value: 'reporte' }, 'Reportar un Error'),
-                    React.createElement('option', { key: 'sugerencia', value: 'sugerencia' }, 'Sugerencia'),
-                    React.createElement('option', { key: 'otro', value: 'otro' }, 'Otro')
+                    React.createElement('option', { key: 'empty', value: '', disabled: true }, 'Selecciona un motivo...'),
+                    React.createElement('option', { key: 'consulta', value: 'Consulta General' }, 'Consulta General'),
+                    React.createElement('option', { key: 'colaboracion', value: 'Propuesta de Colaboración' }, 'Propuesta de Colaboración'),
+                    React.createElement('option', { key: 'reporte', value: 'Reportar un Error' }, 'Reportar un Error'),
+                    React.createElement('option', { key: 'sugerencia', value: 'Sugerencia' }, 'Sugerencia'),
+                    React.createElement('option', { key: 'otro', value: 'Otro' }, 'Otro')
                 ])
             ]),
             React.createElement('div', { key: 'message-group', className: 'form-group' }, [
@@ -275,21 +315,21 @@ const ContactForm = () => {
 const PrivacyPolicyModal = ({ isVisible, onClose }) => {
     useEffect(() => {
         if (!isVisible) return;
-        
+
         const handleKeyDown = (event) => {
             if (event.key === 'Escape') {
                 onClose();
             }
         };
-        
+
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, [isVisible, onClose]);
 
     if (!isVisible) return null;
 
-    return React.createElement('div', { 
-        className: 'modal-backdrop', 
+    return React.createElement('div', {
+        className: 'modal-backdrop',
         onClick: (e) => {
             // Solo cerrar si se hace clic en el backdrop, no en el contenido
             if (e.target === e.currentTarget) {
@@ -297,16 +337,16 @@ const PrivacyPolicyModal = ({ isVisible, onClose }) => {
             }
         }
     },
-        React.createElement('div', { 
-            className: 'modal-content', 
-            onClick: (e) => e.stopPropagation() 
+        React.createElement('div', {
+            className: 'modal-content',
+            onClick: (e) => e.stopPropagation()
         }, [
             React.createElement('div', { key: 'header', className: 'modal-header' }, [
                 React.createElement('h2', { key: 'title' }, 'Política de Privacidad'),
-                React.createElement('button', { 
-                    key: 'close', 
-                    className: 'modal-close-button', 
-                    onClick: onClose, 
+                React.createElement('button', {
+                    key: 'close',
+                    className: 'modal-close-button',
+                    onClick: onClose,
                     'aria-label': 'Cerrar',
                     type: 'button'
                 }, '×')
@@ -324,15 +364,18 @@ const PrivacyPolicyModal = ({ isVisible, onClose }) => {
                     React.createElement('strong', { key: 'bold2' }, 'Datos de Uso (Analytics): '),
                     'Utilizamos servicios como Firebase Analytics (un producto de Google) para recopilar información anónima sobre cómo los visitantes interactúan con nuestro sitio web. Esto incluye datos como las páginas que visita, el tiempo que pasa en el sitio y el tipo de dispositivo que utiliza. Esta información nos ayuda a mejorar la experiencia del usuario y el contenido que ofrecemos. No se recopila información de identificación personal.'
                 ]),
-                
+
                 React.createElement('h3', { key: 'h-usage' }, 'Cómo Usamos su Información'),
                 React.createElement('p', { key: 'p-usage' }, 'Utilizamos la información que recopilamos para: responder a sus consultas, mejorar y optimizar nuestro sitio web, y analizar tendencias de uso para crear contenido más relevante.'),
 
                 React.createElement('h3', { key: 'h-cookies' }, 'Cookies'),
                 React.createElement('p', { key: 'p-cookies' }, 'Nuestro sitio utiliza cookies necesarias para su funcionamiento y para los servicios de análisis proporcionados por Google (Firebase). Las cookies son pequeños archivos de texto que se almacenan en su dispositivo. Puede configurar su navegador para que rechace las cookies, pero esto podría afectar la funcionalidad del sitio.'),
+                
+                React.createElement('h3', { key: 'h-affiliates' }, 'Enlaces de Afiliados'),
+                React.createElement('p', { key: 'p-affiliates' }, 'Este sitio puede contener enlaces de afiliados. Si realiza una compra a través de estos enlaces, podemos recibir una comisión sin costo adicional para usted. Indicamos claramente este tipo de contenido.'),
 
                 React.createElement('h3', { key: 'h-third-party' }, 'Enlaces a Terceros'),
-                React.createElement('p', { key: 'p-third-party' }, 'Este sitio puede contener enlaces a sitios web de terceros (por ejemplo, en las secciones de "Recomendaciones" o "Tutoriales"). No somos responsables de las prácticas de privacidad ni del contenido de estos sitios externos. Le recomendamos leer sus políticas de privacidad.'),
+                React.createElement('p', { key: 'p-third-party' }, 'Este sitio puede contener enlaces a sitios web de terceros (por ejemplo, en las secciones de "Recomendaciones", "Tutoriales" o "Afiliados"). No somos responsables de las prácticas de privacidad ni del contenido de estos sitios externos. Le recomendamos leer sus políticas de privacidad.'),
 
                 React.createElement('h3', { key: 'h-security' }, 'Seguridad de los Datos'),
                 React.createElement('p', { key: 'p-security' }, 'Implementamos medidas de seguridad razonables para proteger la información contra el acceso, alteración o destrucción no autorizados. Sin embargo, ningún método de transmisión por Internet es 100% seguro.'),
@@ -368,6 +411,31 @@ const ErrorState = ({ error }) => {
     ]);
 };
 
+const ResourcesPage = ({ data }) => {
+    const recommendations = data.filter(item => item.category === 'recomendaciones');
+    const affiliates = data.filter(item => item.category === 'afiliados');
+
+    return React.createElement('div', { className: 'resources-container' }, [
+        React.createElement('h2', { key: 'header', className: 'resources-header' }, 'Recursos para Creadores'),
+        React.createElement('p', { key: 'disclaimer', className: 'resources-disclaimer' }, 'Algunos enlaces en esta sección son de afiliado, lo que significa que puedo recibir una pequeña comisión si decides realizar una compra sin ningún costo adicional para ti. Esto me ayuda a seguir creando contenido gratuito y de calidad.'),
+        
+        React.createElement('h3', { key: 'rec-subheader', className: 'resources-subheader' }, 'Software y Plataformas Esenciales'),
+        recommendations.length > 0
+            ? React.createElement('div', { key: 'rec-list', className: 'recommendation-list' },
+                recommendations.map(item => React.createElement(RecommendationCard, { key: item.id, item }))
+              )
+            : React.createElement(EmptyState, { key: 'rec-empty', message: 'Próximamente encontrarás aquí software y webs recomendadas.' }),
+
+        React.createElement('h3', { key: 'aff-subheader', className: 'resources-subheader' }, 'Descubre gadgets y productos útiles'),
+        affiliates.length > 0
+            ? React.createElement('div', { key: 'aff-grid', className: 'content-grid' },
+                affiliates.map(item => React.createElement(AffiliateCard, { key: item.id, item }))
+              )
+            : React.createElement(EmptyState, { key: 'aff-empty', message: 'Próximamente encontrarás aquí los productos que uso y recomiendo.' })
+    ]);
+};
+
+
 // Main App Component
 const App = () => {
     const [activeTab, setActiveTab] = useState('imagenes');
@@ -375,27 +443,40 @@ const App = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [isPolicyVisible, setIsPolicyVisible] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState([]);
 
-    const tabs = ['imagenes', 'videos', 'descargas', 'recomendaciones', 'tutoriales', 'sobre mi', 'contacto'];
+    const tabs = ['imagenes', 'videos', 'descargas', 'tutoriales', 'recursos', 'sobre mi', 'contacto'];
+
+    const fuse = useMemo(() => {
+        if (data.length > 0) {
+            return new Fuse(data, {
+                keys: ['title', 'description', 'prompt'],
+                includeScore: true,
+                threshold: 0.4,
+                minMatchCharLength: 2,
+            });
+        }
+        return null;
+    }, [data]);
 
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
             setError(null);
-            
+
             try {
                 console.log('Cargando datos desde Firebase...');
                 const contentCollectionRef = collection(db, 'content');
                 const contentSnapshot = await getDocs(contentCollectionRef);
-                
+
                 const contentList = contentSnapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data()
                 }));
-                
+
                 setData(contentList);
                 console.log(`Datos cargados: ${contentList.length} elementos`);
-                console.log('Datos:', contentList); // Para debug
             } catch (err) {
                 console.error("Error al cargar datos:", err);
                 setError(err);
@@ -412,87 +493,140 @@ const App = () => {
         }
     }, []);
 
+    useEffect(() => {
+        if (searchQuery && fuse) {
+            const results = fuse.search(searchQuery).map(result => result.item);
+            setSearchResults(results);
+        } else {
+            setSearchResults([]);
+        }
+    }, [searchQuery, fuse]);
+
+
     const formatTabName = (tab) => {
         const names = {
             'imagenes': 'Imágenes',
             'videos': 'Videos',
             'descargas': 'Descargas',
-            'recomendaciones': 'Recomendaciones',
             'tutoriales': 'Tutoriales',
+            'recursos': 'Recursos',
             'sobre mi': 'Sobre Mí',
             'contacto': 'Contacto'
         };
         return names[tab] || tab.charAt(0).toUpperCase() + tab.slice(1);
     };
 
+    const getCardComponent = (category) => {
+        switch (category) {
+            case 'imagenes':
+            case 'videos':
+                return ImagePromptCard;
+            case 'descargas':
+                return DownloadCard;
+            case 'tutoriales':
+                return TutorialCard;
+             case 'afiliados':
+                return AffiliateCard;
+            case 'recomendaciones':
+                return RecommendationCard;
+            default:
+                return ImagePromptCard; // Fallback
+        }
+    };
+    
     const renderContent = () => {
-        // Handle static pages first
+        // Handle loading and error states first
+        if (loading) return React.createElement(LoadingState);
+        if (error) return React.createElement(ErrorState, { error });
+
+        // Handle search results view
+        if (searchQuery) {
+            if (searchResults.length === 0) {
+                return React.createElement(EmptyState, {
+                    message: `No se encontraron resultados para "${searchQuery}".`
+                });
+            }
+            // 'recomendaciones' tiene un layout diferente
+            const recommendationResults = searchResults.filter(item => item.category === 'recomendaciones');
+            const gridResults = searchResults.filter(item => item.category !== 'recomendaciones');
+
+            return React.createElement(React.Fragment, null, [
+                gridResults.length > 0 && React.createElement('div', { key: 'grid', className: 'content-grid' },
+                    gridResults.map(item => {
+                        const CardComponent = getCardComponent(item.category);
+                        return React.createElement(CardComponent, { key: item.id, item });
+                    })
+                ),
+                recommendationResults.length > 0 && React.createElement('div', { key: 'list', className: 'recommendation-list', style: {marginTop: '1.5rem'} },
+                    recommendationResults.map(item => {
+                         const CardComponent = getCardComponent(item.category);
+                        return React.createElement(CardComponent, { key: item.id, item });
+                    })
+                )
+            ]);
+        }
+        
+        // Handle static pages
         if (activeTab === 'sobre mi') return React.createElement(AboutMe, { setActiveTab });
         if (activeTab === 'contacto') return React.createElement(ContactForm);
+        if (activeTab === 'recursos') return React.createElement(ResourcesPage, { data });
 
-        // Handle loading state for dynamic content
-        if (loading) {
-            return React.createElement(LoadingState);
-        }
-
-        // Handle error state
-        if (error) {
-            return React.createElement(ErrorState, { error });
-        }
-
-        // Filter data by category
+        // Filter data by category for tab view
         const filteredData = data.filter(item => item.category === activeTab);
 
-        // Handle empty state
         if (filteredData.length === 0) {
             return React.createElement(EmptyState, {
                 message: `Aún no hay contenido en "${formatTabName(activeTab)}". ¡Vuelve pronto!`
             });
         }
-
-        // Render content based on tab
-        let CardComponent;
-        let containerClassName = 'content-grid';
-
-        switch (activeTab) {
-            case 'imagenes':
-            case 'videos':
-                CardComponent = ImagePromptCard;
-                break;
-            case 'descargas':
-                CardComponent = DownloadCard;
-                break;
-            case 'tutoriales':
-                CardComponent = TutorialCard;
-                break;
-            case 'recomendaciones':
-                CardComponent = RecommendationCard;
-                containerClassName = 'recommendation-list';
-                break;
-            default:
-                CardComponent = ImagePromptCard;
-        }
+        
+        const CardComponent = getCardComponent(activeTab);
+        const containerClassName = activeTab === 'recomendaciones' ? 'recommendation-list' : 'content-grid';
 
         return React.createElement('div', { className: containerClassName },
-            filteredData.map(item => 
+            filteredData.map(item =>
                 React.createElement(CardComponent, { key: item.id, item })
             )
         );
+    };
+    
+    const handleSearchChange = (e) => {
+        setSearchQuery(e.target.value);
     };
 
     return React.createElement('div', {}, [
         React.createElement('header', { key: 'header', className: 'app-header' }, [
             React.createElement('h1', { key: 'title' }, 'TheRamzes'),
-            React.createElement('p', { 
-                key: 'welcome', 
-                className: 'welcome-text' 
+            React.createElement('p', {
+                key: 'welcome',
+                className: 'welcome-text'
             }, 'Bienvenido a mi universo creativo. Descubre, aprende y crea con la ayuda de la inteligencia artificial.'),
-            React.createElement('nav', { 
-                key: 'nav', 
-                className: 'tabs-nav', 
-                role: 'tablist', 
-                'aria-label': 'Navegación de contenido' 
-            }, 
+            
+            React.createElement('div', { key: 'search', className: 'search-container' }, [
+                 React.createElement('svg', { 
+                    key: 'icon', 
+                    className: 'search-icon', 
+                    xmlns: "http://www.w3.org/2000/svg", 
+                    viewBox: "0 0 24 24", 
+                    fill: "currentColor" 
+                }, React.createElement('path', { d: "M10 18a7.952 7.952 0 0 0 4.897-1.688l4.396 4.396 1.414-1.414-4.396-4.396A7.952 7.952 0 0 0 18 10c0-4.411-3.589-8-8-8s-8 3.589-8 8 3.589 8 8 8zm0-14c3.309 0 6 2.691 6 6s-2.691 6-6 6-6-2.691-6-6 2.691-6 6-6z" })),
+                 React.createElement('input', {
+                    key: 'input',
+                    type: 'search',
+                    className: 'search-input',
+                    placeholder: 'Buscar en todo el sitio...',
+                    value: searchQuery,
+                    onChange: handleSearchChange,
+                    'aria-label': 'Buscar contenido'
+                })
+            ]),
+
+            !searchQuery && React.createElement('nav', {
+                key: 'nav',
+                className: 'tabs-nav',
+                role: 'tablist',
+                'aria-label': 'Navegación de contenido'
+            },
                 tabs.map(tab =>
                     React.createElement('button', {
                         key: tab,
@@ -504,7 +638,12 @@ const App = () => {
                 )
             )
         ]),
-        React.createElement('main', { key: 'main', role: 'tabpanel' }, renderContent()),
+        
+        React.createElement('main', { key: 'main' }, [
+            searchQuery && React.createElement('h2', { key: 'search-title', className: 'search-results-header' }, `Resultados para: "${searchQuery}"`),
+            React.createElement('div', { role: 'tabpanel' }, renderContent())
+        ]),
+
         React.createElement('footer', { key: 'footer' }, [
             React.createElement('p', { key: 'copyright' }, `© ${new Date().getFullYear()} TheRamzes. Todos los derechos reservados.`),
             React.createElement('a', {
@@ -517,10 +656,10 @@ const App = () => {
                 className: 'footer-link'
             }, 'Política de Privacidad')
         ]),
-        React.createElement(PrivacyPolicyModal, { 
+        React.createElement(PrivacyPolicyModal, {
             key: 'modal',
-            isVisible: isPolicyVisible, 
-            onClose: () => setIsPolicyVisible(false) 
+            isVisible: isPolicyVisible,
+            onClose: () => setIsPolicyVisible(false)
         })
     ]);
 };
