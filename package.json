@@ -4,11 +4,8 @@
   "description": "AI Prompts & Creations",
   "type": "module",
   "scripts": {
-    "build": "replace-in-file \"__FIREBASE_API_KEY__\" \"$PUBLIC_FIREBASE_API_KEY\" index.js admin.html"
+    "build": "sed -i \"s|__FIREBASE_API_KEY__|${PUBLIC_FIREBASE_API_KEY}|g\" index.js && sed -i \"s|__FIREBASE_API_KEY__|${PUBLIC_FIREBASE_API_KEY}|g\" admin.html"
   },
   "author": "TheRamzes",
-  "license": "ISC",
-  "dependencies": {
-    "replace-in-file": "^7.1.0"
-  }
+  "license": "ISC"
 }
