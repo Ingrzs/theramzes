@@ -1,22 +1,13 @@
 
 
+
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import React, { useState, useEffect, useMemo } from 'https://esm.sh/react@18';
+import { getFirestore, collection, getDocs, query, orderBy, limit, startAfter } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import React, { useState, useEffect, useMemo, useCallback } from 'https://esm.sh/react@18';
 import ReactDOM from 'https://esm.sh/react-dom@18/client';
 import Fuse from 'https://esm.sh/fuse.js@7.0.0';
+import { firebaseConfig } from './config.js';
 
-// --- CONFIGURACIÓN DE FIREBASE INCRUSTADA ---
-const firebaseConfig = {
-    apiKey: "AIzaSyB-GfHrjdFiFEQG1hb38TyAl1X7AIqarnM",
-    authDomain: "theramzes-creations.firebaseapp.com",
-    projectId: "theramzes-creations",
-    storageBucket: "theramzes-creations.firebasestorage.app",
-    messagingSenderId: "497450013723",
-    appId: "1:497450013723:web:1d3019c9c0d7da82a754be",
-    measurementId: "G-1B2TVSMM1Y"
-};
-// --- FIN DE LA CONFIGURACIÓN ---
 
 // Initialize Firebase
 let app, db;
@@ -331,7 +322,6 @@ const PrivacyPolicyModal = ({ isVisible, onClose }) => {
     return React.createElement('div', {
         className: 'modal-backdrop',
         onClick: (e) => {
-            // Solo cerrar si se hace clic en el backdrop, no en el contenido
             if (e.target === e.currentTarget) {
                 onClose();
             }
@@ -411,9 +401,9 @@ const ErrorState = ({ error }) => {
     ]);
 };
 
-const ResourcesPage = ({ data }) => {
-    const recommendations = data.filter(item => item.category === 'recomendaciones');
-    const affiliates = data.filter(item => item.category === 'afiliados');
+const ResourcesPage = ({ allData }) => {
+    const recommendations = allData.filter(item => item.category === 'recomendaciones');
+    const affiliates = allData.filter(item => item.category === 'afiliados');
 
     return React.createElement('div', { className: 'resources-container' }, [
         React.createElement('h2', { key: 'header', className: 'resources-header' }, 'Recursos para Creadores'),
@@ -440,13 +430,17 @@ const ResourcesPage = ({ data }) => {
 const App = () => {
     const [activeTab, setActiveTab] = useState('imagenes');
     const [data, setData] = useState([]);
+    const [lastDoc, setLastDoc] = useState(null); // Para paginación
+    const [hasMore, setHasMore] = useState(true); // Para saber si hay más datos
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
     const [error, setError] = useState(null);
     const [isPolicyVisible, setIsPolicyVisible] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
 
     const tabs = ['imagenes', 'videos', 'descargas', 'tutoriales', 'recursos', 'sobre mi', 'contacto'];
+    const CONTENT_PER_PAGE = 12;
 
     const fuse = useMemo(() => {
         if (data.length > 0) {
@@ -459,48 +453,93 @@ const App = () => {
         }
         return null;
     }, [data]);
-
-    useEffect(() => {
-        const fetchData = async () => {
-            setLoading(true);
-            setError(null);
-
-            try {
-                console.log('Cargando datos desde Firebase...');
-                const contentCollectionRef = collection(db, 'content');
-                const contentSnapshot = await getDocs(contentCollectionRef);
-
-                const contentList = contentSnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-
-                setData(contentList);
-                console.log(`Datos cargados: ${contentList.length} elementos`);
-            } catch (err) {
-                console.error("Error al cargar datos:", err);
-                setError(err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        if (db) {
-            fetchData();
-        } else {
-            setError(new Error('Firebase no se inicializó correctamente'));
-            setLoading(false);
+    
+    const fetchAllDataForSearch = useCallback(async () => {
+        try {
+            const contentCollectionRef = collection(db, 'content');
+            const contentSnapshot = await getDocs(contentCollectionRef);
+            const contentList = contentSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            return contentList;
+        } catch (err) {
+            console.error("Error fetching all data for search:", err);
+            return [];
         }
     }, []);
 
-    useEffect(() => {
-        if (searchQuery && fuse) {
-            const results = fuse.search(searchQuery).map(result => result.item);
-            setSearchResults(results);
-        } else {
-            setSearchResults([]);
+    const fetchData = useCallback(async (startAfterDoc = null) => {
+        if (!db) {
+            setError(new Error('Firebase no se inicializó correctamente'));
+            setLoading(false);
+            return;
         }
-    }, [searchQuery, fuse]);
+
+        const isInitialLoad = !startAfterDoc;
+        if (isInitialLoad) {
+            setLoading(true);
+        } else {
+            setLoadingMore(true);
+        }
+        setError(null);
+
+        try {
+            const contentCollectionRef = collection(db, 'content');
+            let q;
+            if (startAfterDoc) {
+                q = query(contentCollectionRef, orderBy('createdAt', 'desc'), startAfter(startAfterDoc), limit(CONTENT_PER_PAGE));
+            } else {
+                q = query(contentCollectionRef, orderBy('createdAt', 'desc'), limit(CONTENT_PER_PAGE));
+            }
+            
+            const contentSnapshot = await getDocs(q);
+
+            const contentList = contentSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            
+            const lastVisible = contentSnapshot.docs[contentSnapshot.docs.length - 1];
+            setLastDoc(lastVisible);
+            
+            if (contentList.length < CONTENT_PER_PAGE) {
+                setHasMore(false);
+            }
+
+            setData(prevData => isInitialLoad ? contentList : [...prevData, ...contentList]);
+        } catch (err) {
+            console.error("Error al cargar datos:", err);
+            setError(err);
+        } finally {
+            if (isInitialLoad) {
+                setLoading(false);
+            } else {
+                setLoadingMore(false);
+            }
+        }
+    }, []);
+
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
+
+    useEffect(() => {
+        const performSearch = async () => {
+             if (searchQuery) {
+                const allData = await fetchAllDataForSearch();
+                const fuseInstance = new Fuse(allData, {
+                    keys: ['title', 'description', 'prompt'],
+                    includeScore: true,
+                    threshold: 0.4,
+                    minMatchCharLength: 2,
+                });
+                const results = fuseInstance.search(searchQuery).map(result => result.item);
+                setSearchResults(results);
+            } else {
+                setSearchResults([]);
+            }
+        };
+        performSearch();
+    }, [searchQuery, fetchAllDataForSearch]);
 
 
     const formatTabName = (tab) => {
@@ -535,18 +574,15 @@ const App = () => {
     };
     
     const renderContent = () => {
-        // Handle loading and error states first
         if (loading) return React.createElement(LoadingState);
         if (error) return React.createElement(ErrorState, { error });
 
-        // Handle search results view
         if (searchQuery) {
             if (searchResults.length === 0) {
                 return React.createElement(EmptyState, {
                     message: `No se encontraron resultados para "${searchQuery}".`
                 });
             }
-            // 'recomendaciones' tiene un layout diferente
             const recommendationResults = searchResults.filter(item => item.category === 'recomendaciones');
             const gridResults = searchResults.filter(item => item.category !== 'recomendaciones');
 
@@ -566,15 +602,13 @@ const App = () => {
             ]);
         }
         
-        // Handle static pages
         if (activeTab === 'sobre mi') return React.createElement(AboutMe, { setActiveTab });
         if (activeTab === 'contacto') return React.createElement(ContactForm);
-        if (activeTab === 'recursos') return React.createElement(ResourcesPage, { data });
+        if (activeTab === 'recursos') return React.createElement(ResourcesPage, { allData: data });
 
-        // Filter data by category for tab view
         const filteredData = data.filter(item => item.category === activeTab);
 
-        if (filteredData.length === 0) {
+        if (filteredData.length === 0 && !hasMore) {
             return React.createElement(EmptyState, {
                 message: `Aún no hay contenido en "${formatTabName(activeTab)}". ¡Vuelve pronto!`
             });
@@ -583,11 +617,20 @@ const App = () => {
         const CardComponent = getCardComponent(activeTab);
         const containerClassName = activeTab === 'recomendaciones' ? 'recommendation-list' : 'content-grid';
 
-        return React.createElement('div', { className: containerClassName },
-            filteredData.map(item =>
-                React.createElement(CardComponent, { key: item.id, item })
-            )
-        );
+        return React.createElement(React.Fragment, null, [
+            React.createElement('div', { key: 'content-container', className: containerClassName },
+                filteredData.map(item =>
+                    React.createElement(CardComponent, { key: item.id, item })
+                )
+            ),
+             hasMore && !loadingMore && ['imagenes', 'videos', 'descargas', 'tutoriales'].includes(activeTab) && React.createElement('div', { key: 'load-more-container', className: 'load-more-container' },
+                React.createElement('button', {
+                    className: 'load-more-button',
+                    onClick: () => fetchData(lastDoc)
+                }, 'Cargar más')
+            ),
+            loadingMore && React.createElement('div', { key: 'loading-more-spinner', className: 'loading-spinner', style: { marginTop: '2rem' } })
+        ]);
     };
     
     const handleSearchChange = (e) => {
@@ -633,7 +676,17 @@ const App = () => {
                         role: 'tab',
                         'aria-selected': activeTab === tab,
                         className: `tab-button ${activeTab === tab ? 'active' : ''}`,
-                        onClick: () => setActiveTab(tab)
+                        onClick: () => {
+                            setActiveTab(tab);
+                            // Reset data for pagination when changing tabs
+                            setData([]);
+                            setLastDoc(null);
+                            setHasMore(true);
+                            // Fetch data for the new tab
+                            if (!['sobre mi', 'contacto', 'recursos'].includes(tab)) {
+                                fetchData();
+                            }
+                        }
                     }, formatTabName(tab))
                 )
             )
