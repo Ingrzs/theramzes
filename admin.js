@@ -21,7 +21,7 @@ try {
 const AddContentForm = () => {
     const [formData, setFormData] = useState({
         title: '', category: 'imagenes', imageUrl: '', prompt: '',
-        description: '', downloadUrl: '', linkUrl: '', disclaimer: ''
+        description: '', downloadUrl: '', linkUrl: '', disclaimer: '', details: ''
     });
     const [status, setStatus] = useState({ message: '', type: '' });
 
@@ -43,6 +43,7 @@ const AddContentForm = () => {
                 title: formData.title,
                 category: formData.category,
                 imageUrl: formData.imageUrl,
+                details: formData.details, // Guardar siempre los detalles
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             };
 
@@ -56,7 +57,7 @@ const AddContentForm = () => {
             setStatus({ message: '¡Entrada guardada con éxito!', type: 'success' });
             setFormData({
                 title: '', category: 'imagenes', imageUrl: '', prompt: '',
-                description: '', downloadUrl: '', linkUrl: '', disclaimer: ''
+                description: '', downloadUrl: '', linkUrl: '', disclaimer: '', details: ''
             });
             setTimeout(() => setStatus({ message: '', type: '' }), 3000);
         } catch (error) {
@@ -75,7 +76,7 @@ const AddContentForm = () => {
         }
         if (['descargas', 'tutoriales', 'recomendaciones', 'afiliados'].includes(category)) {
              fields.push(React.createElement('div', { key: 'desc-group', className: 'form-group' }, [
-                React.createElement('label', { htmlFor: 'description' }, 'Descripción'),
+                React.createElement('label', { htmlFor: 'description' }, 'Descripción Breve (para la tarjeta)'),
                 React.createElement('textarea', { id: 'description', name: 'description', value: formData.description, onChange: handleChange, rows: 3, required: true })
             ]));
         }
@@ -129,6 +130,17 @@ const AddContentForm = () => {
                 React.createElement('input', { type: 'url', id: 'imageUrl', name: 'imageUrl', value: formData.imageUrl, onChange: handleChange, required: true, placeholder: 'https://ejemplo.com/imagen.jpg' })
             ]),
             ...renderConditionalFields(),
+             React.createElement('div', { key: 'details-group', className: 'form-group' }, [
+                React.createElement('label', { htmlFor: 'details' }, 'Detalles Adicionales (para la vista ampliada)'),
+                React.createElement('textarea', { 
+                    id: 'details', 
+                    name: 'details', 
+                    value: formData.details, 
+                    onChange: handleChange, 
+                    rows: 6,
+                    placeholder: 'Explica cómo usar el prompt, en qué plataforma, da consejos, o añade cualquier información útil. Este texto aparecerá cuando el usuario haga clic en la tarjeta.' 
+                })
+            ]),
             renderStatusMessage(),
             React.createElement('button', {
                 type: 'submit',
