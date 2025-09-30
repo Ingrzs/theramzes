@@ -3,6 +3,7 @@
 
 
 
+
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getFirestore, collection, getDocs, getDoc, doc, query, orderBy, limit, startAfter } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import React, { useState, useEffect, useMemo, useCallback } from 'https://esm.sh/react@18';
@@ -34,11 +35,12 @@ try {
 }
 
 // Components
-const ImagePromptCard = ({ item }) => {
+const ImagePromptCard = ({ item, onShowDetails }) => {
     const [isPromptVisible, setIsPromptVisible] = useState(false);
     const [copyStatus, setCopyStatus] = useState('Copiar');
 
-    const handleCopy = () => {
+    const handleCopy = (e) => {
+        e.stopPropagation();
         if (item.prompt) {
             navigator.clipboard.writeText(item.prompt).then(() => {
                 setCopyStatus('¡Copiado!');
@@ -51,7 +53,7 @@ const ImagePromptCard = ({ item }) => {
 
     const promptId = `prompt-${item.id}`;
 
-    return React.createElement('div', { className: 'card' }, [
+    return React.createElement('div', { className: 'card', onClick: () => onShowDetails(item) }, [
         React.createElement('img', {
             key: 'image',
             src: item.imageUrl,
@@ -64,7 +66,10 @@ const ImagePromptCard = ({ item }) => {
             React.createElement('div', { key: 'actions', className: 'card-actions' },
                 React.createElement('button', {
                     className: 'card-button',
-                    onClick: () => setIsPromptVisible(!isPromptVisible),
+                    onClick: (e) => {
+                        e.stopPropagation();
+                        setIsPromptVisible(!isPromptVisible);
+                    },
                     'aria-expanded': isPromptVisible,
                     'aria-controls': promptId
                 }, isPromptVisible ? 'Ocultar Prompt' : 'Ver Prompt')
@@ -73,7 +78,8 @@ const ImagePromptCard = ({ item }) => {
         React.createElement('div', {
             key: 'prompt',
             id: promptId,
-            className: `prompt-container ${isPromptVisible ? 'visible' : ''}`
+            className: `prompt-container ${isPromptVisible ? 'visible' : ''}`,
+            onClick: (e) => e.stopPropagation() // Evitar que se cierre al hacer clic dentro
         }, [
             React.createElement('button', {
                 key: 'copy',
@@ -85,8 +91,8 @@ const ImagePromptCard = ({ item }) => {
     ]);
 };
 
-const DownloadCard = ({ item }) => {
-    return React.createElement('div', { className: 'card' }, [
+const DownloadCard = ({ item, onShowDetails }) => {
+    return React.createElement('div', { className: 'card', onClick: () => onShowDetails(item) }, [
         React.createElement('img', {
             key: 'image',
             src: item.imageUrl,
@@ -102,14 +108,15 @@ const DownloadCard = ({ item }) => {
                     key: 'download',
                     href: item.downloadUrl,
                     className: 'card-button',
-                    download: true
+                    download: true,
+                    onClick: (e) => e.stopPropagation()
                 }, 'Descargar')
             )
         ])
     ]);
 };
 
-const RecommendationCard = ({ item }) => {
+const RecommendationCard = ({ item, onShowDetails }) => {
     const hasLink = item.linkUrl && typeof item.linkUrl === 'string' && item.linkUrl.trim() !== '';
 
     const cardContent = [
@@ -131,18 +138,27 @@ const RecommendationCard = ({ item }) => {
             href: item.linkUrl,
             target: '_blank',
             rel: 'noopener noreferrer',
-            className: 'recommendation-card has-link'
+            className: 'recommendation-card has-link',
+            onClick: (e) => {
+                e.stopPropagation();
+                // Si hay detalles, prevenimos el comportamiento por defecto y abrimos el modal
+                if (item.details) {
+                    e.preventDefault();
+                    onShowDetails(item);
+                }
+            }
         }, cardContent);
     }
 
     return React.createElement('div', {
-        className: 'recommendation-card'
+        className: 'recommendation-card',
+        onClick: () => onShowDetails(item)
     }, cardContent);
 };
 
 
-const TutorialCard = ({ item }) => {
-    return React.createElement('div', { className: 'card' }, [
+const TutorialCard = ({ item, onShowDetails }) => {
+    return React.createElement('div', { className: 'card', onClick: () => onShowDetails(item) }, [
         React.createElement('img', {
             key: 'image',
             src: item.imageUrl,
@@ -159,15 +175,16 @@ const TutorialCard = ({ item }) => {
                     href: item.linkUrl,
                     target: '_blank',
                     rel: 'noopener noreferrer',
-                    className: 'card-button'
+                    className: 'card-button',
+                    onClick: (e) => e.stopPropagation()
                 }, 'Ver Tutorial')
             )
         ])
     ]);
 };
 
-const AffiliateCard = ({ item }) => {
-    return React.createElement('div', { className: 'card' }, [
+const AffiliateCard = ({ item, onShowDetails }) => {
+    return React.createElement('div', { className: 'card', onClick: () => onShowDetails(item) }, [
         React.createElement('img', {
             key: 'image',
             src: item.imageUrl,
@@ -185,7 +202,8 @@ const AffiliateCard = ({ item }) => {
                     href: item.linkUrl,
                     target: '_blank',
                     rel: 'noopener noreferrer sponsored',
-                    className: 'card-button'
+                    className: 'card-button',
+                    onClick: (e) => e.stopPropagation()
                 }, 'Ver Producto')
             )
         ])
@@ -316,6 +334,74 @@ const ContactForm = () => {
     ]);
 };
 
+const DetailModal = ({ item, onClose }) => {
+    const [copyStatus, setCopyStatus] = useState('Copiar');
+
+    useEffect(() => {
+        const handleKeyDown = (event) => {
+            if (event.key === 'Escape') onClose();
+        };
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [onClose]);
+
+    const handleCopy = () => {
+        if (item.prompt) {
+            navigator.clipboard.writeText(item.prompt).then(() => {
+                setCopyStatus('¡Copiado!');
+                setTimeout(() => setCopyStatus('Copiar'), 2000);
+            }, () => {
+                setCopyStatus('Error');
+            });
+        }
+    };
+
+    const modalContent = [
+        React.createElement('div', { key: 'header', className: 'modal-header' }, [
+            React.createElement('h2', { key: 'title' }, item.title),
+            React.createElement('button', {
+                key: 'close',
+                className: 'modal-close-button',
+                onClick: onClose,
+                'aria-label': 'Cerrar',
+                type: 'button'
+            }, '×')
+        ]),
+        React.createElement('div', { key: 'body', className: 'modal-body' }, [
+            React.createElement('img', {
+                key: 'image',
+                src: item.imageUrl,
+                alt: item.title,
+                className: 'detail-modal-image'
+            }),
+            item.description && React.createElement('p', { key: 'description' }, item.description),
+            item.details && React.createElement('div', { key: 'details-section' }, [
+                React.createElement('h3', { key: 'details-title' }, 'Detalles Adicionales'),
+                React.createElement('p', { key: 'details-content', className: 'detail-modal-details' }, item.details)
+            ]),
+            item.prompt && React.createElement('div', { key: 'prompt-section', className: 'detail-modal-prompt' }, [
+                 React.createElement('h3', { key: 'prompt-title' }, 'Prompt'),
+                 React.createElement('div', { className: 'prompt-container visible' }, [
+                    React.createElement('button', {
+                        key: 'copy',
+                        className: 'copy-button',
+                        onClick: handleCopy
+                    }, copyStatus),
+                    React.createElement('p', { key: 'text' }, item.prompt)
+                ])
+            ]),
+        ])
+    ];
+
+    return React.createElement('div', {
+        className: 'modal-backdrop',
+        onClick: onClose
+    }, React.createElement('div', {
+        className: 'modal-content',
+        onClick: (e) => e.stopPropagation()
+    }, modalContent));
+};
+
 const PrivacyPolicyModal = ({ isVisible, onClose }) => {
     useEffect(() => {
         if (!isVisible) return;
@@ -414,7 +500,7 @@ const ErrorState = ({ error }) => {
     ]);
 };
 
-const ResourcesPage = ({ allData, resourcesDisclaimer }) => {
+const ResourcesPage = ({ allData, resourcesDisclaimer, onShowDetails }) => {
     const recommendations = allData.filter(item => item.category === 'recomendaciones');
     const affiliates = allData.filter(item => item.category === 'afiliados');
 
@@ -425,14 +511,14 @@ const ResourcesPage = ({ allData, resourcesDisclaimer }) => {
         React.createElement('h3', { key: 'rec-subheader', className: 'resources-subheader' }, 'Software y Plataformas Esenciales'),
         recommendations.length > 0
             ? React.createElement('div', { key: 'rec-list', className: 'recommendation-list' },
-                recommendations.map(item => React.createElement(RecommendationCard, { key: item.id, item }))
+                recommendations.map(item => React.createElement(RecommendationCard, { key: item.id, item, onShowDetails }))
               )
             : React.createElement(EmptyState, { key: 'rec-empty', message: 'Próximamente encontrarás aquí software y webs recomendadas.' }),
 
         React.createElement('h3', { key: 'aff-subheader', className: 'resources-subheader' }, 'Descubre gadgets y productos útiles'),
         affiliates.length > 0
             ? React.createElement('div', { key: 'aff-grid', className: 'content-grid' },
-                affiliates.map(item => React.createElement(AffiliateCard, { key: item.id, item }))
+                affiliates.map(item => React.createElement(AffiliateCard, { key: item.id, item, onShowDetails }))
               )
             : React.createElement(EmptyState, { key: 'aff-empty', message: 'Próximamente encontrarás aquí los productos que uso y recomiendo.' })
     ]);
@@ -449,6 +535,7 @@ const App = () => {
     const [loadingMore, setLoadingMore] = useState(false);
     const [error, setError] = useState(null);
     const [isPolicyVisible, setIsPolicyVisible] = useState(false);
+    const [modalItem, setModalItem] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [resourcesDisclaimer, setResourcesDisclaimer] = useState('');
@@ -459,7 +546,7 @@ const App = () => {
     const fuse = useMemo(() => {
         if (data.length > 0) {
             return new Fuse(data, {
-                keys: ['title', 'description', 'prompt'],
+                keys: ['title', 'description', 'prompt', 'details'],
                 includeScore: true,
                 threshold: 0.4,
                 minMatchCharLength: 2,
@@ -555,7 +642,7 @@ const App = () => {
              if (searchQuery) {
                 const allData = await fetchAllDataForSearch();
                 const fuseInstance = new Fuse(allData, {
-                    keys: ['title', 'description', 'prompt'],
+                    keys: ['title', 'description', 'prompt', 'details'],
                     includeScore: true,
                     threshold: 0.4,
                     minMatchCharLength: 2,
@@ -604,6 +691,12 @@ const App = () => {
     const renderContent = () => {
         if (loading) return React.createElement(LoadingState);
         if (error) return React.createElement(ErrorState, { error });
+        
+        const handleShowDetails = (item) => {
+             if (item.details || item.prompt || item.description) {
+                setModalItem(item);
+            }
+        };
 
         if (searchQuery) {
             if (searchResults.length === 0) {
@@ -618,13 +711,13 @@ const App = () => {
                 gridResults.length > 0 && React.createElement('div', { key: 'grid', className: 'content-grid' },
                     gridResults.map(item => {
                         const CardComponent = getCardComponent(item.category);
-                        return React.createElement(CardComponent, { key: item.id, item });
+                        return React.createElement(CardComponent, { key: item.id, item, onShowDetails: handleShowDetails });
                     })
                 ),
                 recommendationResults.length > 0 && React.createElement('div', { key: 'list', className: 'recommendation-list', style: {marginTop: '1.5rem'} },
                     recommendationResults.map(item => {
                          const CardComponent = getCardComponent(item.category);
-                        return React.createElement(CardComponent, { key: item.id, item });
+                        return React.createElement(CardComponent, { key: item.id, item, onShowDetails: handleShowDetails });
                     })
                 )
             ]);
@@ -632,7 +725,7 @@ const App = () => {
         
         if (activeTab === 'sobre mi') return React.createElement(AboutMe, { setActiveTab });
         if (activeTab === 'contacto') return React.createElement(ContactForm);
-        if (activeTab === 'recursos') return React.createElement(ResourcesPage, { allData: data, resourcesDisclaimer: resourcesDisclaimer });
+        if (activeTab === 'recursos') return React.createElement(ResourcesPage, { allData: data, resourcesDisclaimer: resourcesDisclaimer, onShowDetails: handleShowDetails });
 
         const filteredData = data.filter(item => item.category === activeTab);
 
@@ -648,7 +741,7 @@ const App = () => {
         return React.createElement(React.Fragment, null, [
             React.createElement('div', { key: 'content-container', className: containerClassName },
                 filteredData.map(item =>
-                    React.createElement(CardComponent, { key: item.id, item })
+                    React.createElement(CardComponent, { key: item.id, item, onShowDetails: handleShowDetails })
                 )
             ),
              hasMore && !loadingMore && ['imagenes', 'videos', 'descargas', 'tutoriales'].includes(activeTab) && React.createElement('div', { key: 'load-more-container', className: 'load-more-container' },
@@ -738,9 +831,14 @@ const App = () => {
             }, 'Política de Privacidad')
         ]),
         React.createElement(PrivacyPolicyModal, {
-            key: 'modal',
+            key: 'privacy-modal',
             isVisible: isPolicyVisible,
             onClose: () => setIsPolicyVisible(false)
+        }),
+        modalItem && React.createElement(DetailModal, {
+            key: 'detail-modal',
+            item: modalItem,
+            onClose: () => setModalItem(null)
         })
     ]);
 };
