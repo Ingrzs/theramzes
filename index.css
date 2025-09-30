@@ -141,7 +141,6 @@ h1, h2, h3 {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 1.5rem;
-    align-items: start;
 }
 
 .card {
@@ -152,6 +151,7 @@ h1, h2, h3 {
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     display: flex;
     flex-direction: column;
+    cursor: pointer;
 }
 
 .card:hover {
@@ -183,6 +183,7 @@ h1, h2, h3 {
     margin-top: 1rem;
     display: flex;
     justify-content: flex-end;
+    gap: 0.5rem;
 }
 
 .card-button {
@@ -308,6 +309,7 @@ h1, h2, h3 {
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     text-decoration: none;
     color: inherit;
+    cursor: pointer;
 }
 
 .recommendation-card.has-link:hover {
@@ -551,11 +553,12 @@ footer {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
+    background-color: rgba(0, 0, 0, 0.8);
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 1000;
+    padding: 1rem;
 }
 
 .modal-content {
@@ -564,7 +567,7 @@ footer {
     border-radius: 12px;
     width: 90%;
     max-width: 800px;
-    max-height: 80vh;
+    max-height: 90vh;
     overflow-y: auto;
     border: 1px solid var(--border-color);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
@@ -581,6 +584,7 @@ footer {
 
 .modal-header h2 {
     margin-bottom: 0;
+    font-size: 1.8rem;
 }
 
 .modal-close-button {
@@ -611,6 +615,29 @@ footer {
 .modal-body p {
     margin-bottom: 1rem;
     line-height: 1.7;
+}
+
+/* Detail Modal Specific Styles */
+.detail-modal-image {
+    width: 100%;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+}
+
+.detail-modal-details {
+    white-space: pre-wrap; /* Respeta saltos de línea y espacios */
+    line-height: 1.7;
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: var(--bg-tertiary);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.detail-modal-prompt {
+    margin-top: 1.5rem;
 }
 
 /* Load More Button Styles */
