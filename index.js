@@ -1,9 +1,4 @@
 
-
-
-
-
-
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getFirestore, collection, getDocs, getDoc, doc, query, orderBy, limit, startAfter } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import React, { useState, useEffect, useMemo, useCallback } from 'https://esm.sh/react@18';
@@ -54,7 +49,7 @@ const ImagePromptCard = ({ item, onShowDetails }) => {
     const promptId = `prompt-${item.id}`;
 
     return React.createElement('div', { className: 'card', onClick: () => onShowDetails(item) }, [
-        React.createElement('img', {
+        item.imageUrl && React.createElement('img', {
             key: 'image',
             src: item.imageUrl,
             alt: item.title,
@@ -93,7 +88,7 @@ const ImagePromptCard = ({ item, onShowDetails }) => {
 
 const DownloadCard = ({ item, onShowDetails }) => {
     return React.createElement('div', { className: 'card', onClick: () => onShowDetails(item) }, [
-        React.createElement('img', {
+        item.imageUrl && React.createElement('img', {
             key: 'image',
             src: item.imageUrl,
             alt: item.title,
@@ -120,7 +115,7 @@ const RecommendationCard = ({ item, onShowDetails }) => {
     const hasLink = item.linkUrl && typeof item.linkUrl === 'string' && item.linkUrl.trim() !== '';
 
     const cardContent = [
-        React.createElement('img', {
+        item.imageUrl && React.createElement('img', {
             key: 'image',
             src: item.imageUrl,
             alt: item.title,
@@ -159,7 +154,7 @@ const RecommendationCard = ({ item, onShowDetails }) => {
 
 const TutorialCard = ({ item, onShowDetails }) => {
     return React.createElement('div', { className: 'card', onClick: () => onShowDetails(item) }, [
-        React.createElement('img', {
+        item.imageUrl && React.createElement('img', {
             key: 'image',
             src: item.imageUrl,
             alt: item.title,
@@ -185,7 +180,7 @@ const TutorialCard = ({ item, onShowDetails }) => {
 
 const AffiliateCard = ({ item, onShowDetails }) => {
     return React.createElement('div', { className: 'card', onClick: () => onShowDetails(item) }, [
-        React.createElement('img', {
+        item.imageUrl && React.createElement('img', {
             key: 'image',
             src: item.imageUrl,
             alt: item.title,
@@ -368,7 +363,7 @@ const DetailModal = ({ item, onClose }) => {
             }, '×')
         ]),
         React.createElement('div', { key: 'body', className: 'modal-body' }, [
-            React.createElement('img', {
+            item.imageUrl && React.createElement('img', {
                 key: 'image',
                 src: item.imageUrl,
                 alt: item.title,
@@ -556,6 +551,7 @@ const App = () => {
     }, [data]);
     
     const fetchAllDataForSearch = useCallback(async () => {
+        if (!db) return [];
         try {
             const contentCollectionRef = collection(db, 'content');
             const contentSnapshot = await getDocs(contentCollectionRef);
@@ -653,7 +649,11 @@ const App = () => {
                 setSearchResults([]);
             }
         };
-        performSearch();
+        const searchTimeout = setTimeout(() => {
+            performSearch();
+        }, 300); // Debounce search input
+
+        return () => clearTimeout(searchTimeout);
     }, [searchQuery, fetchAllDataForSearch]);
 
 
@@ -669,6 +669,20 @@ const App = () => {
         };
         return names[tab] || tab.charAt(0).toUpperCase() + tab.slice(1);
     };
+
+    const handleTabSwitch = useCallback((tab) => {
+        if (activeTab === tab) return;
+
+        setActiveTab(tab);
+        setSearchQuery(''); // Clear search on tab switch
+
+        if (!['sobre mi', 'contacto', 'recursos'].includes(tab)) {
+            setData([]);
+            setLastDoc(null);
+            setHasMore(true);
+            fetchData();
+        }
+    }, [activeTab, fetchData]);
 
     const getCardComponent = (category) => {
         switch (category) {
@@ -723,16 +737,21 @@ const App = () => {
             ]);
         }
         
-        if (activeTab === 'sobre mi') return React.createElement(AboutMe, { setActiveTab });
+        if (activeTab === 'sobre mi') return React.createElement(AboutMe, { setActiveTab: handleTabSwitch });
         if (activeTab === 'contacto') return React.createElement(ContactForm);
         if (activeTab === 'recursos') return React.createElement(ResourcesPage, { allData: data, resourcesDisclaimer: resourcesDisclaimer, onShowDetails: handleShowDetails });
 
         const filteredData = data.filter(item => item.category === activeTab);
 
-        if (filteredData.length === 0 && !hasMore) {
-            return React.createElement(EmptyState, {
-                message: `Aún no hay contenido en "${formatTabName(activeTab)}". ¡Vuelve pronto!`
-            });
+        if (filteredData.length === 0) {
+             // Show empty state only if there are no more items to load
+            if (!hasMore) {
+                 return React.createElement(EmptyState, {
+                    message: `Aún no hay contenido en "${formatTabName(activeTab)}". ¡Vuelve pronto!`
+                });
+            }
+            // If there might be more items, show nothing or a mini-loader while waiting for load more
+            // Or rely on the load more button to appear
         }
         
         const CardComponent = getCardComponent(activeTab);
@@ -797,17 +816,7 @@ const App = () => {
                         role: 'tab',
                         'aria-selected': activeTab === tab,
                         className: `tab-button ${activeTab === tab ? 'active' : ''}`,
-                        onClick: () => {
-                            setActiveTab(tab);
-                            // Reset data for pagination when changing tabs
-                            setData([]);
-                            setLastDoc(null);
-                            setHasMore(true);
-                            // Fetch data for the new tab
-                            if (!['sobre mi', 'contacto', 'recursos'].includes(tab)) {
-                                fetchData();
-                            }
-                        }
+                        onClick: () => handleTabSwitch(tab)
                     }, formatTabName(tab))
                 )
             )
@@ -820,9 +829,8 @@ const App = () => {
 
         React.createElement('footer', { key: 'footer' }, [
             React.createElement('p', { key: 'copyright' }, `© ${new Date().getFullYear()} TheRamzes. Todos los derechos reservados.`),
-            React.createElement('a', {
+            React.createElement('button', {
                 key: 'privacy',
-                href: '#',
                 onClick: (e) => {
                     e.preventDefault();
                     setIsPolicyVisible(true);
