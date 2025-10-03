@@ -11,9 +11,35 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="index.css">
+<script type="importmap">
+{
+  "imports": {
+    "fs": "https://aistudiocdn.com/fs@^0.0.1-security",
+    "path": "https://aistudiocdn.com/path@^0.12.7"
+  }
+}
+</script>
 </head>
 <body>
-    <div id="root"></div>
+    <div id="root">
+        <!-- Contenido estático para mejorar el SEO y la carga inicial -->
+        <header class="app-header">
+            <h1>TheRamzes</h1>
+            <p class="welcome-text">Bienvenido a mi universo creativo. Descubre, aprende y crea con la ayuda de la inteligencia artificial.</p>
+        </header>
+        <main>
+             <div class="loading-container">
+                <div class="loading-spinner"></div>
+                <p>Cargando creaciones...</p>
+            </div>
+        </main>
+         <noscript>
+            <div style="color: #e0e0e0; text-align: center; padding: 2rem; background-color: #1e1e1e; border-radius: 12px; margin: 2rem auto; max-width: 600px;">
+                <h2>JavaScript Deshabilitado</h2>
+                <p>Esta página web necesita JavaScript para funcionar correctamente. Por favor, habilítalo en la configuración de tu navegador.</p>
+            </div>
+        </noscript>
+    </div>
     <script type="module" src="index.js"></script>
 </body>
 </html>
