@@ -3,6 +3,53 @@
 
 const { useState, useEffect, Fragment } = React;
 
+// --- INICIO: Lógica de Autenticación ---
+
+// La contraseña se inyecta aquí desde el build script. NO la escribas directamente.
+const ADMIN_PASSWORD = "__ADMIN_PASSWORD__";
+
+const AdminAuth = () => {
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+    useEffect(() => {
+        // Primero, revisamos si el usuario ya se autenticó en esta sesión.
+        if (sessionStorage.getItem('adminAuthenticated') === 'true') {
+            setIsAuthenticated(true);
+            return;
+        }
+
+        // Si no, pedimos la contraseña.
+        const enteredPassword = prompt('Por favor, introduce la contraseña de administrador:');
+        
+        if (enteredPassword === ADMIN_PASSWORD) {
+            // Si la contraseña es correcta, lo guardamos en la sesión y mostramos el panel.
+            sessionStorage.setItem('adminAuthenticated', 'true');
+            setIsAuthenticated(true);
+        } else {
+            // Si es incorrecta, mostramos un mensaje de error.
+            if (enteredPassword !== null) { // Evitar alerta si el usuario cancela
+                 alert('Contraseña incorrecta. Acceso denegado.');
+            }
+        }
+    }, []); // Se ejecuta solo una vez al cargar el componente.
+
+    if (!isAuthenticated) {
+        // Mientras no esté autenticado, mostramos una pantalla de bloqueo.
+        return React.createElement('div', { 
+            className: 'contact-container', 
+            style: { textAlign: 'center', marginTop: '5rem', maxWidth: '500px' } 
+        }, [
+            React.createElement('h2', {key: 'title'}, 'Acceso Restringido'),
+            React.createElement('p', {key: 'message', style: {color: 'var(--text-secondary)'}}, 'Necesitas la contraseña correcta para acceder al panel de administrador.')
+        ]);
+    }
+
+    // Si la autenticación es exitosa, renderizamos el panel de admin.
+    return React.createElement(AdminPanel);
+};
+// --- FIN: Lógica de Autenticación ---
+
+
 // La configuración de Firebase ahora se carga desde config.js en admin.html
 // Esto asegura que la configuración esté centralizada.
 
@@ -332,4 +379,4 @@ const AdminPanel = () => {
 // Renderizar la aplicación
 const container = document.getElementById('root');
 const root = ReactDOM.createRoot(container);
-root.render(React.createElement(AdminPanel));
+root.render(React.createElement(AdminAuth));
