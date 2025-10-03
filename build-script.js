@@ -11,14 +11,15 @@ const filesToDeploy = [
     'admin.html',
     'admin.js'
 ];
-// Archivos que necesitan que se les inyecte la clave de API.
-const filesToUpdate = ['index.js', 'admin.html'];
+// Archivos que necesitan que se les inyecte claves o contraseñas.
+const filesToUpdate = ['index.js', 'admin.html', 'admin.js'];
 
 // --- Script Principal ---
 const apiKey = process.env.PUBLIC_FIREBASE_API_KEY;
+const adminPassword = process.env.ADMIN_PASSWORD;
 
-if (!apiKey) {
-    console.error('Error: La variable de entorno PUBLIC_FIREBASE_API_KEY no está definida.');
+if (!apiKey || !adminPassword) {
+    console.error('Error: Faltan las variables de entorno PUBLIC_FIREBASE_API_KEY y/o ADMIN_PASSWORD.');
     process.exit(1);
 }
 
@@ -42,13 +43,18 @@ try {
         
         let fileContent = fs.readFileSync(sourcePath, 'utf8');
 
-        // Verificar si este archivo necesita el reemplazo de la clave de API.
+        // Verificar si este archivo necesita el reemplazo de placeholders.
         if (filesToUpdate.includes(fileName)) {
+            // Inyectar clave de API de Firebase
             if (fileContent.includes('__FIREBASE_API_KEY__')) {
                 fileContent = fileContent.replace(/__FIREBASE_API_KEY__/g, apiKey);
                 console.log(`  -> Clave API inyectada en ${fileName}.`);
-            } else {
-                console.warn(`  -> Advertencia: El placeholder __FIREBASE_API_KEY__ no se encontró en ${fileName}.`);
+            }
+            
+            // Inyectar contraseña del panel de admin
+            if (fileContent.includes('__ADMIN_PASSWORD__')) {
+                fileContent = fileContent.replace(/__ADMIN_PASSWORD__/g, adminPassword);
+                console.log(`  -> Contraseña de admin inyectada en ${fileName}.`);
             }
         }
         
