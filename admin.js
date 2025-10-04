@@ -64,13 +64,27 @@ try {
     console.error('Error inicializando Firebase:', error);
 }
 
-// --- Componente para añadir contenido ---
-const AddContentForm = () => {
-    const [formData, setFormData] = useState({
-        title: '', category: 'imagenes', imageUrl: '', prompt: '',
-        description: '', downloadUrl: '', linkUrl: '', disclaimer: '', details: ''
-    });
+const initialFormState = {
+    title: '', category: 'imagenes', imageUrl: '', prompt: '',
+    description: '', downloadUrl: '', linkUrl: '', disclaimer: '', details: ''
+};
+
+// --- Componente para añadir y editar contenido ---
+const ContentForm = ({ editingItem, onUpdateComplete }) => {
+    const [formData, setFormData] = useState(initialFormState);
     const [status, setStatus] = useState({ message: '', type: '' });
+    
+    useEffect(() => {
+        if (editingItem) {
+            // Si estamos editando, llenamos el formulario con los datos del item.
+            // Usamos el estado inicial para asegurarnos de que todos los campos se resetean correctamente
+            // si un campo no existe en el item que se edita (ej. 'prompt' en 'descargas').
+            setFormData({ ...initialFormState, ...editingItem });
+        } else {
+            // Si no, reseteamos el formulario a su estado inicial.
+            setFormData(initialFormState);
+        }
+    }, [editingItem]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -83,32 +97,42 @@ const AddContentForm = () => {
             setStatus({ message: 'Error: La base de datos no está conectada.', type: 'error' });
             return;
         }
-        setStatus({ message: 'Guardando entrada...', type: 'loading' });
+        
+        const action = editingItem ? 'Actualizando' : 'Guardando';
+        setStatus({ message: `${action} entrada...`, type: 'loading' });
 
         try {
             const dataToSave = {
                 title: formData.title,
                 category: formData.category,
                 imageUrl: formData.imageUrl,
-                details: formData.details, // Guardar siempre los detalles
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                details: formData.details,
+                // No incluimos 'createdAt' en la actualización para no sobreescribirlo
             };
 
-            if (['imagenes', 'videos'].includes(formData.category)) dataToSave.prompt = formData.prompt;
-            if (['descargas', 'tutoriales', 'recomendaciones', 'afiliados'].includes(formData.category)) dataToSave.description = formData.description;
-            if (formData.category === 'descargas') dataToSave.downloadUrl = formData.downloadUrl;
-            if (['tutoriales', 'recomendaciones', 'afiliados'].includes(formData.category)) dataToSave.linkUrl = formData.linkUrl;
-            if (formData.category === 'afiliados') dataToSave.disclaimer = formData.disclaimer;
+            // Añadimos campos específicos de la categoría
+            if (['imagenes', 'videos'].includes(formData.category)) dataToSave.prompt = formData.prompt || '';
+            if (['descargas', 'tutoriales', 'recomendaciones', 'afiliados'].includes(formData.category)) dataToSave.description = formData.description || '';
+            if (formData.category === 'descargas') dataToSave.downloadUrl = formData.downloadUrl || '';
+            if (['tutoriales', 'recomendaciones', 'afiliados'].includes(formData.category)) dataToSave.linkUrl = formData.linkUrl || '';
+            if (formData.category === 'afiliados') dataToSave.disclaimer = formData.disclaimer || '';
             
-            await db.collection("content").add(dataToSave);
-            setStatus({ message: '¡Entrada guardada con éxito!', type: 'success' });
-            setFormData({
-                title: '', category: 'imagenes', imageUrl: '', prompt: '',
-                description: '', downloadUrl: '', linkUrl: '', disclaimer: '', details: ''
-            });
+            if (editingItem) {
+                // Modo Edición: Actualizar el documento existente
+                await db.collection("content").doc(editingItem.id).update(dataToSave);
+                setStatus({ message: '¡Entrada actualizada con éxito!', type: 'success' });
+                onUpdateComplete(); // Llama a la función para limpiar el formulario y refrescar la lista
+            } else {
+                // Modo Creación: Añadir un nuevo documento
+                dataToSave.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+                await db.collection("content").add(dataToSave);
+                setStatus({ message: '¡Entrada guardada con éxito!', type: 'success' });
+                setFormData(initialFormState); // Limpiar formulario solo en creación
+            }
+
             setTimeout(() => setStatus({ message: '', type: '' }), 3000);
         } catch (error) {
-            setStatus({ message: `Error al guardar: ${error.message}`, type: 'error' });
+            setStatus({ message: `Error al ${action.toLowerCase()}: ${error.message}`, type: 'error' });
         }
     };
     
@@ -155,7 +179,7 @@ const AddContentForm = () => {
     };
 
     return React.createElement('div', { className: 'contact-container', style: { maxWidth: '800px' } }, [
-        React.createElement('h2', { key: 'title', style: { textAlign: 'center' } }, 'Añadir Contenido a la Web'),
+        React.createElement('h2', { key: 'title', style: { textAlign: 'center' } }, editingItem ? 'Editar Contenido' : 'Añadir Contenido a la Web'),
         React.createElement('form', { key: 'form', onSubmit: handleSubmit, className: 'contact-form' }, [
             React.createElement('div', { key: 'title-group', className: 'form-group' }, [
                 React.createElement('label', { htmlFor: 'title' }, 'Título'),
@@ -189,14 +213,24 @@ const AddContentForm = () => {
                 })
             ]),
             renderStatusMessage(),
-            React.createElement('button', {
-                type: 'submit',
-                className: 'submit-button',
-                disabled: status.type === 'loading'
-            }, status.type === 'loading' ? 'Guardando...' : 'Guardar Entrada')
+            React.createElement('div', { key: 'buttons', style: { display: 'flex', gap: '1rem', marginTop: '1rem' } }, [
+                React.createElement('button', {
+                    type: 'submit',
+                    className: 'submit-button',
+                    disabled: status.type === 'loading',
+                    style: { flex: 1 }
+                }, status.type === 'loading' ? 'Guardando...' : (editingItem ? 'Actualizar Entrada' : 'Guardar Entrada')),
+                editingItem && React.createElement('button', {
+                    type: 'button',
+                    className: 'submit-button',
+                    onClick: onUpdateComplete, // Reutilizamos la función para cancelar
+                    style: { flex: 1, backgroundColor: 'var(--bg-tertiary)' }
+                }, 'Cancelar Edición')
+            ])
         ])
     ]);
 };
+
 
 // --- Componente para gestionar avisos ---
 const ManageDisclaimers = () => {
@@ -268,8 +302,8 @@ const ManageDisclaimers = () => {
 };
 
 
-// --- Componente para gestionar (ver y borrar) contenido ---
-const ManageContent = () => {
+// --- Componente para gestionar (ver, editar y borrar) contenido ---
+const ManageContent = ({ onEditItem }) => {
     const [content, setContent] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -327,7 +361,7 @@ const ManageContent = () => {
                     gap: '1rem'
                 }
             }, [
-                React.createElement('div', { key: 'info' }, [
+                React.createElement('div', { key: 'info', style: { flexGrow: 1 } }, [
                     React.createElement('strong', { key: 'title' }, item.title),
                     React.createElement('span', {
                         key: 'category',
@@ -341,18 +375,32 @@ const ManageContent = () => {
                         }
                     }, item.category)
                 ]),
-                React.createElement('button', {
-                    key: 'delete',
-                    onClick: () => handleDelete(item.id),
-                    style: {
-                        backgroundColor: '#a62626',
-                        color: 'white',
-                        border: 'none',
-                        padding: '0.5rem 1rem',
-                        borderRadius: '6px',
-                        cursor: 'pointer'
-                    }
-                }, 'Eliminar')
+                React.createElement('div', { key: 'actions', style: { display: 'flex', gap: '0.5rem' } }, [
+                     React.createElement('button', {
+                        key: 'edit',
+                        onClick: () => onEditItem(item),
+                        style: {
+                            backgroundColor: 'var(--accent-primary)',
+                            color: 'white',
+                            border: 'none',
+                            padding: '0.5rem 1rem',
+                            borderRadius: '6px',
+                            cursor: 'pointer'
+                        }
+                    }, 'Editar'),
+                    React.createElement('button', {
+                        key: 'delete',
+                        onClick: () => handleDelete(item.id),
+                        style: {
+                            backgroundColor: '#a62626',
+                            color: 'white',
+                            border: 'none',
+                            padding: '0.5rem 1rem',
+                            borderRadius: '6px',
+                            cursor: 'pointer'
+                        }
+                    }, 'Eliminar')
+                ])
             ]))
         );
     };
@@ -365,14 +413,35 @@ const ManageContent = () => {
 
 // --- Componente Principal del Panel ---
 const AdminPanel = () => {
+    const [editingItem, setEditingItem] = useState(null);
+    // Usamos una 'key' para forzar el re-montado de ManageContent y que recargue los datos.
+    const [contentKey, setContentKey] = useState(Date.now()); 
+
+    const handleEditItem = (item) => {
+        setEditingItem(item);
+        window.scrollTo({ top: 0, behavior: 'smooth' }); // Desplazarse al formulario
+    };
+
+    const handleUpdateComplete = () => {
+        setEditingItem(null);
+        setContentKey(Date.now()); // Cambiar la key para forzar la recarga
+    };
+
     return React.createElement(Fragment, null, [
         React.createElement('header', { key: 'header', style: { textAlign: 'center', margin: '2rem 0' } }, [
             React.createElement('h1', { key: 'main-title' }, 'Panel de Administrador'),
             React.createElement('p', { key: 'subtitle', style: { color: 'var(--text-secondary)' } }, 'Añade y gestiona el contenido de la web.')
         ]),
-        React.createElement(AddContentForm, { key: 'add-form' }),
+        React.createElement(ContentForm, { 
+            key: 'content-form', 
+            editingItem: editingItem, 
+            onUpdateComplete: handleUpdateComplete 
+        }),
         React.createElement(ManageDisclaimers, { key: 'manage-disclaimers' }),
-        React.createElement(ManageContent, { key: 'manage-content' })
+        React.createElement(ManageContent, { 
+            key: contentKey, // La key fuerza el re-render cuando cambia
+            onEditItem: handleEditItem 
+        })
     ]);
 };
 
