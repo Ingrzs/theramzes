@@ -9,7 +9,8 @@ const filesToDeploy = [
     'index.css',
     'index.js',
     'admin.html',
-    'admin.js'
+    'admin.js',
+    'sitemap.xml'
 ];
 // Archivos que necesitan que se les inyecte claves o contraseñas.
 const filesToUpdate = ['index.js', 'admin.html', 'admin.js'];
