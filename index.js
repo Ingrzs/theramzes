@@ -29,6 +29,23 @@ try {
     console.error('Error inicializando Firebase:', error);
 }
 
+// --- Helpers for Image Optimization ---
+const CLOUDINARY_CLOUD_NAME = 'dbbdcvgbq';
+const optimizeImageUrl = (url, width = 600) => {
+    if (!url || !url.startsWith('http')) return url; // No procesar URLs vacías o relativas
+    // Evita la doble codificación si la URL ya es de Cloudinary
+    if (url.includes('res.cloudinary.com')) return url;
+    return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/fetch/f_auto,q_auto,w_${width}/${encodeURIComponent(url)}`;
+};
+
+const PLACEHOLDER_IMAGE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 9' fill='%232a2a2a'%3E%3C/svg%3E";
+const handleImageError = (e) => {
+    // Evita bucles infinitos si el placeholder también falla
+    if (e.currentTarget.src !== PLACEHOLDER_IMAGE) {
+        e.currentTarget.src = PLACEHOLDER_IMAGE;
+    }
+};
+
 // Components
 const ImagePromptCard = ({ item, onShowDetails }) => {
     const [isPromptVisible, setIsPromptVisible] = useState(false);
@@ -51,10 +68,11 @@ const ImagePromptCard = ({ item, onShowDetails }) => {
     return React.createElement('div', { className: 'card', onClick: () => onShowDetails(item) }, [
         item.imageUrl && React.createElement('img', {
             key: 'image',
-            src: item.imageUrl,
+            src: optimizeImageUrl(item.imageUrl),
             alt: item.title,
             className: 'card-image',
-            loading: 'lazy'
+            loading: 'lazy',
+            onError: handleImageError
         }),
         React.createElement('div', { key: 'content', className: 'card-content' }, [
             React.createElement('h3', { key: 'title', className: 'card-title' }, item.title),
@@ -90,10 +108,11 @@ const DownloadCard = ({ item, onShowDetails }) => {
     return React.createElement('div', { className: 'card', onClick: () => onShowDetails(item) }, [
         item.imageUrl && React.createElement('img', {
             key: 'image',
-            src: item.imageUrl,
+            src: optimizeImageUrl(item.imageUrl),
             alt: item.title,
             className: 'card-image',
-            loading: 'lazy'
+            loading: 'lazy',
+            onError: handleImageError
         }),
         React.createElement('div', { key: 'content', className: 'card-content' }, [
             React.createElement('h3', { key: 'title', className: 'card-title' }, item.title),
@@ -117,10 +136,11 @@ const RecommendationCard = ({ item, onShowDetails }) => {
     const cardContent = [
         item.imageUrl && React.createElement('img', {
             key: 'image',
-            src: item.imageUrl,
+            src: optimizeImageUrl(item.imageUrl, 200),
             alt: item.title,
             className: 'recommendation-card-image',
-            loading: 'lazy'
+            loading: 'lazy',
+            onError: handleImageError
         }),
         React.createElement('div', { key: 'content', className: 'recommendation-card-content' }, [
             React.createElement('h3', { key: 'title', className: 'recommendation-card-title' }, item.title),
@@ -156,10 +176,11 @@ const TutorialCard = ({ item, onShowDetails }) => {
     return React.createElement('div', { className: 'card', onClick: () => onShowDetails(item) }, [
         item.imageUrl && React.createElement('img', {
             key: 'image',
-            src: item.imageUrl,
+            src: optimizeImageUrl(item.imageUrl),
             alt: item.title,
             className: 'card-image',
-            loading: 'lazy'
+            loading: 'lazy',
+            onError: handleImageError
         }),
         React.createElement('div', { key: 'content', className: 'card-content' }, [
             React.createElement('h3', { key: 'title', className: 'card-title' }, item.title),
@@ -182,10 +203,11 @@ const AffiliateCard = ({ item, onShowDetails }) => {
     return React.createElement('div', { className: 'card', onClick: () => onShowDetails(item) }, [
         item.imageUrl && React.createElement('img', {
             key: 'image',
-            src: item.imageUrl,
+            src: optimizeImageUrl(item.imageUrl),
             alt: item.title,
             className: 'card-image',
-            loading: 'lazy'
+            loading: 'lazy',
+            onError: handleImageError
         }),
         React.createElement('div', { key: 'content', className: 'card-content' }, [
             React.createElement('h3', { key: 'title', className: 'card-title' }, item.title),
@@ -209,10 +231,11 @@ const AboutMe = ({ setActiveTab }) => {
     return React.createElement('div', { className: 'about-me-container' }, [
         React.createElement('img', {
             key: 'profile',
-            src: 'https://yt3.googleusercontent.com/UsEE3B7HZCqYlFrE6zI601Pq-_moV7q1diFWggkrSM5yI7imCvZWnBAjnOy5gp6_xx1LAZTUHg=s160-c-k-c0x00ffffff-no-rj',
+            src: optimizeImageUrl('https://yt3.googleusercontent.com/UsEE3B7HZCqYlFrE6zI601Pq-_moV7q1diFWggkrSM5yI7imCvZWnBAjnOy5gp6_xx1LAZTUHg=s160-c-k-c0x00ffffff-no-rj', 240),
             alt: 'Profile',
             className: 'profile-pic',
-            loading: 'lazy'
+            loading: 'lazy',
+            onError: handleImageError
         }),
         React.createElement('h2', { key: 'name' }, 'TheRamzes'),
         React.createElement('p', {
@@ -365,9 +388,11 @@ const DetailModal = ({ item, onClose }) => {
         React.createElement('div', { key: 'body', className: 'modal-body' }, [
             item.imageUrl && React.createElement('img', {
                 key: 'image',
-                src: item.imageUrl,
+                src: optimizeImageUrl(item.imageUrl, 800),
                 alt: item.title,
-                className: 'detail-modal-image'
+                className: 'detail-modal-image',
+                loading: 'lazy',
+                onError: handleImageError
             }),
             item.description && React.createElement('p', { key: 'description' }, item.description),
             item.details && React.createElement('div', { key: 'details-section' }, [
