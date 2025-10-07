@@ -307,18 +307,9 @@ const App = () => {
     
         const contentCollectionRef = collection(db, 'content');
         
-        const executeQuery = async (q) => {
-            const contentSnapshot = await getDocs(q);
-            const contentList = contentSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            const lastVisible = contentSnapshot.docs[contentSnapshot.docs.length - 1];
-            return {
-                newData: contentList,
-                newLastDoc: lastVisible,
-                newHasMore: contentList.length === CONTENT_PER_PAGE,
-            };
-        };
-    
-        // Construir la consulta principal con ordenamiento
+        // Construir la consulta con ordenamiento. Esta es la única forma de asegurar el orden cronológico.
+        // Si esta consulta falla, es porque falta un índice en Firestore.
+        // El mensaje de error que se mostrará en la UI contendrá un enlace directo para crear dicho índice.
         let queryConstraints = [
             where('category', '==', category),
             orderBy('createdAt', 'desc'),
@@ -329,40 +320,21 @@ const App = () => {
         }
     
         try {
-            // Intentar ejecutar la consulta ordenada
             const q = query(contentCollectionRef, ...queryConstraints);
-            return await executeQuery(q);
+            const contentSnapshot = await getDocs(q);
+            const contentList = contentSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const lastVisible = contentSnapshot.docs[contentSnapshot.docs.length - 1];
+            
+            return {
+                newData: contentList,
+                newLastDoc: lastVisible,
+                newHasMore: contentList.length === CONTENT_PER_PAGE,
+            };
         } catch (err) {
-            // Si falla por un índice faltante, hacer un fallback a una consulta sin ordenar
-            if (err.code === 'failed-precondition') {
-                console.warn(
-                    `ADVERTENCIA DE FIREBASE: La consulta para la categoría '${category}' requiere un índice compuesto. ` +
-                    `Visita el enlace en el error original para crearlo y habilitar el orden cronológico. ` +
-                    `Mostrando contenido sin ordenar como fallback. Mensaje original:`, err.message
-                );
-    
-                // Construir la consulta de fallback sin el 'orderBy'
-                let fallbackQueryConstraints = [
-                    where('category', '==', category),
-                    limit(CONTENT_PER_PAGE)
-                ];
-                if (startAfterDoc) {
-                    fallbackQueryConstraints.push(startAfter(startAfterDoc));
-                }
-                
-                try {
-                    const qFallback = query(contentCollectionRef, ...fallbackQueryConstraints);
-                    return await executeQuery(qFallback);
-                } catch (fallbackErr) {
-                    console.error(`Error en la consulta de fallback para la categoría ${category}:`, fallbackErr);
-                    throw fallbackErr; // Lanzar el error de la consulta de fallback
-                }
-    
-            } else {
-                // Para cualquier otro tipo de error, lanzarlo
-                console.error(`Error al cargar datos para la categoría ${category}:`, err);
-                throw err;
-            }
+            // Relanzar el error para que sea capturado por el estado del componente y se muestre al usuario.
+            // El mensaje de error de Firestore es crucial aquí.
+            console.error(`Error al cargar datos para la categoría '${category}':`, err);
+            throw err;
         }
     }, []);
 
