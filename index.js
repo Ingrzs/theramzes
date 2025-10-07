@@ -1,4 +1,6 @@
 
+
+
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getFirestore, collection, getDocs, getDoc, doc, query, where, orderBy, limit, startAfter } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import React, { useState, useEffect, useCallback } from 'https://esm.sh/react@18';
@@ -201,20 +203,46 @@ const PrivacyPolicyModal = ({ isVisible, onClose }) => {
     if (!isVisible) return null;
     return React.createElement('div', { className: 'modal-backdrop', onClick: (e) => { if (e.target === e.currentTarget) onClose(); } },
         React.createElement('div', { className: 'modal-content', onClick: (e) => e.stopPropagation() }, [
-            React.createElement('div', { key: 'header', className: 'modal-header' }, [ React.createElement('h2', { key: 'title' }, 'Política de Privacidad'), React.createElement('button', { key: 'close', className: 'modal-close-button', onClick: onClose, 'aria-label': 'Cerrar' }, '×')]),
+            React.createElement('div', { key: 'header', className: 'modal-header' }, [ React.createElement('h2', { key: 'title' }, 'Política de Privacidad y Términos de Uso'), React.createElement('button', { key: 'close', className: 'modal-close-button', onClick: onClose, 'aria-label': 'Cerrar' }, '×')]),
             React.createElement('div', { key: 'body', className: 'modal-body' }, [
                 React.createElement('p', { key: 'date' }, `Última actualización: ${new Date().toLocaleDateString('es-ES')}`),
+                
+                React.createElement('h2', { key: 'h-privacy-title', style: { fontSize: '1.4rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem', marginBottom: '1rem', marginTop: '0' } }, 'Política de Privacidad'),
                 React.createElement('p', { key: 'intro' }, 'Bienvenido a TheRamzes - AI Prompts & Creations. Su privacidad es de suma importancia para nosotros. Esta Política de Privacidad describe qué datos recopilamos y cómo los usamos y protegemos.'),
                 React.createElement('h3', { key: 'h-info' }, 'Información que Recopilamos'),
                 React.createElement('p', { key: 'p-info1' }, [ React.createElement('strong', { key: 'bold1' }, 'Datos de Contacto: '), 'Si decide contactarnos a través de nuestro formulario, recopilaremos su nombre y dirección de correo electrónico para poder responder a su consulta. No utilizaremos esta información para ningún otro propósito sin su consentimiento explícito.' ]),
                 React.createElement('p', { key: 'p-info2' }, [ React.createElement('strong', { key: 'bold2' }, 'Datos de Uso (Analytics): '), 'Utilizamos servicios como Firebase Analytics (un producto de Google) para recopilar información anónima sobre cómo los visitantes interactúan con nuestro sitio web. Esto incluye datos como las páginas que visita, el tiempo que pasa en el sitio y el tipo de dispositivo que utiliza. Esta información nos ayuda a mejorar la experiencia del usuario y el contenido que ofrecemos. No se recopila información de identificación personal.' ]),
+                React.createElement('h3', { key: 'h-ai-content' }, 'Contenido Generado por IA y Propiedad Intelectual'),
+                React.createElement('p', { key: 'p-ai1' }, 'La gran mayoría del contenido visual (imágenes, videos) y los textos ("prompts") presentados en este sitio son creados utilizando herramientas de inteligencia artificial generativa. Están destinados a servir como inspiración, entretenimiento y recurso educativo.'),
+                React.createElement('p', { key: 'p-ai2' }, [
+                    React.createElement('strong', { key: 'bold-ai' }, 'Aviso Legal Importante: '),
+                    'Todas las imágenes son generadas por IA y sirven solo como ejemplo o inspiración. No están afiliadas, respaldadas ni conectadas de ninguna manera con ningún club, marca, organización o persona del mundo real.'
+                ]),
+                React.createElement('p', { key: 'p-ai3' }, 'Cualquier semejanza con equipaciones deportivas, logotipos, personajes, productos o cualquier otro material protegido por derechos de autor es una coincidencia o se presenta con un fin transformador y artístico. El objetivo no es replicar productos oficiales, sino explorar posibilidades creativas. TheRamzes no reclama la propiedad de ninguna marca registrada de terceros.'),
+                React.createElement('p', { key: 'p-ai4' }, [
+                    React.createElement('strong', { key: 'bold-user' }, 'Su Responsabilidad como Usuario: '),
+                    'Usted es el único responsable del uso que le dé a los prompts e ideas obtenidos de este sitio. Es su deber asegurarse de que el contenido que usted genere a partir de estos prompts no infrinja las leyes de derechos de autor, marcas registradas u otros derechos de propiedad intelectual. Al utilizar este sitio, usted acepta eximir de toda responsabilidad a TheRamzes ante cualquier reclamación que pueda surgir por el uso que usted le dé al contenido.'
+                ]),
                 React.createElement('h3', { key: 'h-usage' }, 'Cómo Usamos su Información'), React.createElement('p', { key: 'p-usage' }, 'Utilizamos la información que recopilamos para: responder a sus consultas, mejorar y optimizar nuestro sitio web, y analizar tendencias de uso para crear contenido más relevante.'),
                 React.createElement('h3', { key: 'h-cookies' }, 'Cookies'), React.createElement('p', { key: 'p-cookies' }, 'Nuestro sitio utiliza cookies necesarias para su funcionamiento y para los servicios de análisis proporcionados por Google (Firebase). Las cookies son pequeños archivos de texto que se almacenan en su dispositivo. Puede configurar su navegador para que rechace las cookies, pero esto podría afectar la funcionalidad del sitio.'),
-                React.createElement('h3', { key: 'h-affiliates' }, 'Enlaces de Afiliados'), React.createElement('p', { key: 'p-affiliates' }, 'Este sitio puede contener enlaces de afiliados. Si realiza una compra a través de estos enlaces, podemos recibir una comisión sin costo adicional para usted. Indicamos claramente este tipo de contenido.'),
+                React.createElement('h3', { key: 'h-affiliates' }, 'Enlaces de Afiliados'), React.createElement('p', { key: 'p-affiliates' }, 'Este sitio puede contener enlaces de afiliados. Si realiza una compra a través de estos enlaces, podemos recibir una comisión sin costo adicional para usted. Estas son recomendaciones de productos y servicios que personalmente uso o considero de alta calidad, no patrocinios directos de las marcas. Indicamos claramente este tipo de contenido.'),
                 React.createElement('h3', { key: 'h-third-party' }, 'Enlaces a Terceros'), React.createElement('p', { key: 'p-third-party' }, 'Este sitio puede contener enlaces a sitios web de terceros (por ejemplo, en las secciones de "Recomendaciones", "Tutoriales" o "Afiliados"). No somos responsables de las prácticas de privacidad ni del contenido de estos sitios externos. Le recomendamos leer sus políticas de privacidad.'),
                 React.createElement('h3', { key: 'h-security' }, 'Seguridad de los Datos'), React.createElement('p', { key: 'p-security' }, 'Implementamos medidas de seguridad razonables para proteger la información contra el acceso, alteración o destrucción no autorizados. Sin embargo, ningún método de transmisión por Internet es 100% seguro.'),
-                React.createElement('h3', { key: 'h-changes' }, 'Cambios a esta Política'), React.createElement('p', { key: 'p-changes' }, 'Nos reservamos el derecho de modificar esta política de privacidad en cualquier momento. Cualquier cambio será efectivo inmediatamente después de su publicación en esta página.'),
-                React.createElement('h3', { key: 'h-contact' }, 'Contacto'), React.createElement('p', { key: 'p-contact' }, 'Si tiene alguna pregunta sobre esta Política de Privacidad, puede contactarnos a través del formulario de contacto disponible en este sitio.')
+                
+                React.createElement('h2', { key: 'h-terms-title', style: { fontSize: '1.4rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem', marginBottom: '1rem', marginTop: '2.5rem' } }, 'Términos de Uso y Limitación de Responsabilidad'),
+                React.createElement('h3', { key: 'h-terms-ip' }, 'Propiedad Intelectual del Sitio'),
+                React.createElement('p', { key: 'p-terms-ip' }, 'El diseño, la marca "TheRamzes", los textos originales y la estructura de este sitio web son propiedad de TheRamzes y están protegidos por las leyes de propiedad intelectual. No está permitida su copia o redistribución sin permiso explícito.'),
+                React.createElement('h3', { key: 'h-terms-as-is' }, 'Exclusión de Garantías (Uso "Tal Cual")'),
+                React.createElement('p', { key: 'p-terms-as-is' }, 'Este sitio web y todo su contenido (prompts, imágenes de ejemplo, tutoriales, etc.) se proporcionan "tal cual", sin garantías de ningún tipo, ya sean expresas o implícitas. No garantizamos que el contenido esté libre de errores, sea adecuado para un propósito particular o que los resultados obtenidos al usar los prompts sean los esperados.'),
+                React.createElement('h3', { key: 'h-terms-liability' }, 'Limitación de Responsabilidad'),
+                React.createElement('p', { key: 'p-terms-liability' }, 'En la máxima medida permitida por la ley, TheRamzes no será responsable de ningún daño directo, indirecto, incidental, especial o consecuente (incluyendo, entre otros, la pérdida de beneficios, datos o interrupción del negocio) que surja del uso o la imposibilidad de usar este sitio web o su contenido, incluso si hemos sido advertidos de la posibilidad de dichos daños.'),
+                React.createElement('h3', { key: 'h-terms-age' }, 'Edad Mínima'),
+                React.createElement('p', { key: 'p-terms-age' }, 'Este sitio web está destinado a usuarios mayores de 13 años (o la edad mínima legal para consentir el procesamiento de datos personales en su jurisdicción). No recopilamos intencionadamente información de menores de esta edad.'),
+                React.createElement('h3', { key: 'h-terms-law' }, 'Ley Aplicable y Jurisdicción'),
+                React.createElement('p', { key: 'p-terms-law' }, 'Estos términos se regirán e interpretarán de acuerdo con las leyes de la jurisdicción correspondiente, sin tener en cuenta sus conflictos de principios legales. Cualquier disputa que surja en relación con estos términos estará sujeta a la jurisdicción exclusiva de los tribunales de dicha ubicación.'),
+
+                React.createElement('h3', { key: 'h-changes' }, 'Cambios a esta Política y Términos'), React.createElement('p', { key: 'p-changes' }, 'Nos reservamos el derecho de modificar esta política de privacidad y términos de uso en cualquier momento. Cualquier cambio será efectivo inmediatamente después de su publicación en esta página.'),
+                React.createElement('h3', { key: 'h-contact' }, 'Contacto'), React.createElement('p', { key: 'p-contact' }, 'Si tiene alguna pregunta sobre esta Política de Privacidad o los Términos de Uso, puede contactarnos a través del formulario de contacto disponible en este sitio.')
             ])
         ])
     );
@@ -509,7 +537,7 @@ const App = () => {
         ]),
         React.createElement('footer', { key: 'footer' }, [
             React.createElement('p', { key: 'copyright' }, `© ${new Date().getFullYear()} TheRamzes. Todos los derechos reservados.`),
-            React.createElement('button', { key: 'privacy', onClick: () => setIsPolicyVisible(true), className: 'footer-link' }, 'Política de Privacidad')
+            React.createElement('button', { key: 'privacy', onClick: () => setIsPolicyVisible(true), className: 'footer-link' }, 'Política de Privacidad y Términos de Uso')
         ]),
         React.createElement(PrivacyPolicyModal, { key: 'privacy-modal', isVisible: isPolicyVisible, onClose: () => setIsPolicyVisible(false) }),
         modalItem && React.createElement(DetailModal, { key: 'detail-modal', item: modalItem, onClose: () => setModalItem(null) })
