@@ -1,3 +1,4 @@
+
 :root {
     --bg-primary: #121212;
     --bg-secondary: #1e1e1e;
@@ -124,6 +125,8 @@ h1, h2, h3 {
     font-size: 1rem;
     font-weight: 500;
     transition: all 0.3s ease;
+    text-decoration: none; /* Añadido para los enlaces <a> */
+    display: inline-block; /* Asegura que el padding se aplique bien */
 }
 
 .tab-button:hover {
