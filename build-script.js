@@ -1,3 +1,4 @@
+
 import fs from 'fs';
 import path from 'path';
 
@@ -6,6 +7,12 @@ const outputDir = 'public';
 // Lista de todos los archivos que deben formar parte del despliegue final.
 const filesToDeploy = [
     'index.html',
+    'videos.html',
+    'descargas.html',
+    'tutoriales.html',
+    'recursos.html',
+    'sobre-mi.html',
+    'contacto.html',
     'index.css',
     'index.js',
     'admin.html',
@@ -39,6 +46,11 @@ try {
     filesToDeploy.forEach(fileName => {
         const sourcePath = path.join(process.cwd(), fileName);
         const destPath = path.join(outputDirPath, fileName);
+
+        if (!fs.existsSync(sourcePath)) {
+            console.warn(`  -> Advertencia: El archivo fuente ${sourcePath} no existe. Se omitirá.`);
+            return;
+        }
 
         console.log(`Procesando: ${fileName}...`);
         
