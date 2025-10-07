@@ -1,7 +1,7 @@
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getFirestore, collection, getDocs, getDoc, doc, query, where, orderBy, limit, startAfter } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import React, { useState, useEffect, useMemo, useCallback } from 'https://esm.sh/react@18';
+import React, { useState, useEffect, useCallback } from 'https://esm.sh/react@18';
 import ReactDOM from 'https://esm.sh/react-dom@18/client';
 import Fuse from 'https://esm.sh/fuse.js@7.0.0';
 
@@ -158,7 +158,6 @@ const ContactForm = () => {
     ]);
 };
 
-// ... (DetailModal, PrivacyPolicyModal, EmptyState, LoadingState, ErrorState no cambian sustancialmente) ...
 const DetailModal = ({ item, onClose }) => {
     const [copyStatus, setCopyStatus] = useState('Copiar');
 
@@ -224,19 +223,32 @@ const EmptyState = ({ message }) => React.createElement('div', { className: 'emp
 const LoadingState = ({ message }) => React.createElement('div', { className: 'loading-container' }, [React.createElement('div', { key: 'spinner', className: 'loading-spinner' }), React.createElement('p', { key: 'text' }, message)]);
 const ErrorState = ({ error }) => React.createElement('div', { className: 'error-container' }, [React.createElement('h3', { key: 'title' }, 'Error de conexión'), React.createElement('p', { key: 'message' }, `No se pudieron cargar los datos: ${error.message}`), React.createElement('p', { key: 'help' }, 'Verifica tu conexión a internet.')]);
 
-
-const ResourcesPage = ({ allData, resourcesDisclaimer, onShowDetails }) => {
-    const recommendations = allData.filter(item => item.category === 'recomendaciones');
-    const affiliates = allData.filter(item => item.category === 'afiliados');
+const ResourcesPage = ({
+    recommendations,
+    affiliates,
+    resourcesDisclaimer,
+    onShowDetails,
+    onLoadMoreRecs,
+    onLoadMoreAffs,
+    hasMoreRecs,
+    hasMoreAffs,
+    loadingRecs,
+    loadingAffs
+}) => {
     return React.createElement('div', { className: 'resources-container' }, [
         React.createElement('h2', { key: 'header', className: 'resources-header' }, 'Recursos para Creadores'),
         resourcesDisclaimer && React.createElement('p', { key: 'disclaimer', className: 'resources-disclaimer' }, resourcesDisclaimer),
         React.createElement('h3', { key: 'rec-subheader', className: 'resources-subheader' }, 'Software y Plataformas Esenciales'),
         recommendations.length > 0 ? React.createElement('div', { key: 'rec-list', className: 'recommendation-list' }, recommendations.map(item => React.createElement(RecommendationCard, { key: item.id, item, onShowDetails }))) : React.createElement(EmptyState, { key: 'rec-empty', message: 'Próximamente encontrarás aquí software y webs recomendadas.' }),
+        hasMoreRecs && !loadingRecs && React.createElement('div', { key: 'load-more-recs', className: 'load-more-container' }, React.createElement('button', { className: 'load-more-button', onClick: onLoadMoreRecs }, 'Cargar más software')),
+        loadingRecs && React.createElement('div', { key: 'loading-recs', className: 'loading-spinner', style: { marginTop: '2rem' } }),
         React.createElement('h3', { key: 'aff-subheader', className: 'resources-subheader' }, 'Descubre gadgets y productos útiles'),
-        affiliates.length > 0 ? React.createElement('div', { key: 'aff-grid', className: 'content-grid' }, affiliates.map(item => React.createElement(AffiliateCard, { key: item.id, item, onShowDetails }))) : React.createElement(EmptyState, { key: 'aff-empty', message: 'Próximamente encontrarás aquí los productos que uso y recomiendo.' })
+        affiliates.length > 0 ? React.createElement('div', { key: 'aff-grid', className: 'content-grid' }, affiliates.map(item => React.createElement(AffiliateCard, { key: item.id, item, onShowDetails }))) : React.createElement(EmptyState, { key: 'aff-empty', message: 'Próximamente encontrarás aquí los productos que uso y recomiendo.' }),
+        hasMoreAffs && !loadingAffs && React.createElement('div', { key: 'load-more-affs', className: 'load-more-container' }, React.createElement('button', { className: 'load-more-button', onClick: onLoadMoreAffs }, 'Cargar más productos')),
+        loadingAffs && React.createElement('div', { key: 'loading-affs', className: 'loading-spinner', style: { marginTop: '2rem' } })
     ]);
 };
+
 
 // Main App Component
 const App = () => {
@@ -255,6 +267,16 @@ const App = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [resourcesDisclaimer, setResourcesDisclaimer] = useState('');
+
+    // State for Resources page
+    const [recommendations, setRecommendations] = useState([]);
+    const [affiliates, setAffiliates] = useState([]);
+    const [lastRecDoc, setLastRecDoc] = useState(null);
+    const [lastAffDoc, setLastAffDoc] = useState(null);
+    const [hasMoreRecs, setHasMoreRecs] = useState(true);
+    const [hasMoreAffs, setHasMoreAffs] = useState(true);
+    const [loadingRecs, setLoadingRecs] = useState(false);
+    const [loadingAffs, setLoadingAffs] = useState(false);
 
     const CONTENT_PER_PAGE = 12;
 
@@ -281,50 +303,102 @@ const App = () => {
     }, []);
 
     const fetchData = useCallback(async (category, startAfterDoc = null) => {
-        if (!db) { setError(new Error('Firebase no se inicializó')); setLoading(false); return; }
-        const isInitialLoad = !startAfterDoc;
-        isInitialLoad ? setLoading(true) : setLoadingMore(true);
-        setError(null);
-        try {
-            const contentCollectionRef = collection(db, 'content');
-            let q;
-            // Construir la consulta base
-            let queryConstraints = [orderBy('createdAt', 'desc'), limit(CONTENT_PER_PAGE)];
-            if(category) {
-                 queryConstraints.unshift(where('category', 'in', Array.isArray(category) ? category : [category]));
-            }
-
-            if (startAfterDoc) {
-                queryConstraints.push(startAfter(startAfterDoc));
-            }
-            
-            q = query(contentCollectionRef, ...queryConstraints);
-            
+        if (!db) { throw new Error('Firebase no se inicializó'); }
+    
+        const contentCollectionRef = collection(db, 'content');
+        
+        const executeQuery = async (q) => {
             const contentSnapshot = await getDocs(q);
             const contentList = contentSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            
             const lastVisible = contentSnapshot.docs[contentSnapshot.docs.length - 1];
-            setLastDoc(lastVisible);
-            if (contentList.length < CONTENT_PER_PAGE) setHasMore(false);
-            setData(prevData => isInitialLoad ? contentList : [...prevData, ...contentList]);
+            return {
+                newData: contentList,
+                newLastDoc: lastVisible,
+                newHasMore: contentList.length === CONTENT_PER_PAGE,
+            };
+        };
+    
+        // Construir la consulta principal con ordenamiento
+        let queryConstraints = [
+            where('category', '==', category),
+            orderBy('createdAt', 'desc'),
+            limit(CONTENT_PER_PAGE)
+        ];
+        if (startAfterDoc) {
+            queryConstraints.push(startAfter(startAfterDoc));
+        }
+    
+        try {
+            // Intentar ejecutar la consulta ordenada
+            const q = query(contentCollectionRef, ...queryConstraints);
+            return await executeQuery(q);
         } catch (err) {
-            console.error("Error al cargar datos:", err);
-            setError(err);
-        } finally {
-            isInitialLoad ? setLoading(false) : setLoadingMore(false);
+            // Si falla por un índice faltante, hacer un fallback a una consulta sin ordenar
+            if (err.code === 'failed-precondition') {
+                console.warn(
+                    `ADVERTENCIA DE FIREBASE: La consulta para la categoría '${category}' requiere un índice compuesto. ` +
+                    `Visita el enlace en el error original para crearlo y habilitar el orden cronológico. ` +
+                    `Mostrando contenido sin ordenar como fallback. Mensaje original:`, err.message
+                );
+    
+                // Construir la consulta de fallback sin el 'orderBy'
+                let fallbackQueryConstraints = [
+                    where('category', '==', category),
+                    limit(CONTENT_PER_PAGE)
+                ];
+                if (startAfterDoc) {
+                    fallbackQueryConstraints.push(startAfter(startAfterDoc));
+                }
+                
+                try {
+                    const qFallback = query(contentCollectionRef, ...fallbackQueryConstraints);
+                    return await executeQuery(qFallback);
+                } catch (fallbackErr) {
+                    console.error(`Error en la consulta de fallback para la categoría ${category}:`, fallbackErr);
+                    throw fallbackErr; // Lanzar el error de la consulta de fallback
+                }
+    
+            } else {
+                // Para cualquier otro tipo de error, lanzarlo
+                console.error(`Error al cargar datos para la categoría ${category}:`, err);
+                throw err;
+            }
         }
     }, []);
 
     useEffect(() => {
+        const loadInitialData = async () => {
+            setLoading(true);
+            setError(null);
+            setData([]);
+            setRecommendations([]);
+            setAffiliates([]);
+            try {
+                if (['imagenes', 'videos', 'descargas', 'tutoriales'].includes(currentPage)) {
+                    const { newData, newLastDoc, newHasMore } = await fetchData(currentPage);
+                    setData(newData);
+                    setLastDoc(newLastDoc);
+                    setHasMore(newHasMore);
+                } else if (currentPage === 'recursos') {
+                    const [recResult, affResult] = await Promise.all([
+                        fetchData('recomendaciones'),
+                        fetchData('afiliados')
+                    ]);
+                    setRecommendations(recResult.newData);
+                    setLastRecDoc(recResult.newLastDoc);
+                    setHasMoreRecs(recResult.newHasMore);
+                    setAffiliates(affResult.newData);
+                    setLastAffDoc(affResult.newLastDoc);
+                    setHasMoreAffs(affResult.newHasMore);
+                }
+            } catch (err) {
+                setError(err);
+            } finally {
+                setLoading(false);
+            }
+        };
         fetchSettings();
-        if (['imagenes', 'videos', 'descargas', 'tutoriales'].includes(currentPage)) {
-            fetchData(currentPage);
-        } else if (currentPage === 'recursos') {
-            fetchData(['recomendaciones', 'afiliados']);
-        }
-        else {
-            setLoading(false);
-        }
+        loadInitialData();
     }, [currentPage, fetchData, fetchSettings]);
 
      useEffect(() => {
@@ -343,6 +417,50 @@ const App = () => {
         return () => clearTimeout(searchTimeout);
     }, [searchQuery, fetchAllDataForSearch]);
 
+    const handleLoadMore = useCallback(async () => {
+        if (loadingMore || !hasMore) return;
+        setLoadingMore(true);
+        try {
+            const { newData, newLastDoc, newHasMore } = await fetchData(currentPage, lastDoc);
+            setData(prev => [...prev, ...newData]);
+            setLastDoc(newLastDoc);
+            setHasMore(newHasMore);
+        } catch (err) {
+            setError(err);
+        } finally {
+            setLoadingMore(false);
+        }
+    }, [currentPage, fetchData, lastDoc, hasMore, loadingMore]);
+
+    const handleLoadMoreRecs = useCallback(async () => {
+        if (loadingRecs || !hasMoreRecs) return;
+        setLoadingRecs(true);
+        try {
+            const { newData, newLastDoc, newHasMore } = await fetchData('recomendaciones', lastRecDoc);
+            setRecommendations(prev => [...prev, ...newData]);
+            setLastRecDoc(newLastDoc);
+            setHasMoreRecs(newHasMore);
+        } catch (err) {
+            console.error("Error cargando más recomendaciones", err);
+        } finally {
+            setLoadingRecs(false);
+        }
+    }, [fetchData, lastRecDoc, hasMoreRecs, loadingRecs]);
+
+    const handleLoadMoreAffs = useCallback(async () => {
+        if (loadingAffs || !hasMoreAffs) return;
+        setLoadingAffs(true);
+        try {
+            const { newData, newLastDoc, newHasMore } = await fetchData('afiliados', lastAffDoc);
+            setAffiliates(prev => [...prev, ...newData]);
+            setLastAffDoc(newLastDoc);
+            setHasMoreAffs(newHasMore);
+        } catch (err) {
+            console.error("Error cargando más afiliados", err);
+        } finally {
+            setLoadingAffs(false);
+        }
+    }, [fetchData, lastAffDoc, hasMoreAffs, loadingAffs]);
 
     const getCardComponent = (category) => ({
         'imagenes': ImagePromptCard, 'videos': ImagePromptCard,
@@ -363,14 +481,25 @@ const App = () => {
         
         if (currentPage === 'sobre-mi') return React.createElement(AboutMe);
         if (currentPage === 'contacto') return React.createElement(ContactForm);
-        if (currentPage === 'recursos') return React.createElement(ResourcesPage, { allData: data, resourcesDisclaimer: resourcesDisclaimer, onShowDetails: handleShowDetails });
+        if (currentPage === 'recursos') return React.createElement(ResourcesPage, {
+            recommendations,
+            affiliates,
+            resourcesDisclaimer,
+            onShowDetails: handleShowDetails,
+            onLoadMoreRecs: handleLoadMoreRecs,
+            onLoadMoreAffs: handleLoadMoreAffs,
+            hasMoreRecs,
+            hasMoreAffs,
+            loadingRecs,
+            loadingAffs
+        });
         
         if (data.length === 0 && !hasMore) return React.createElement(EmptyState, { message: `Aún no hay contenido aquí. ¡Vuelve pronto!` });
 
         return React.createElement(React.Fragment, null, [
             React.createElement('div', { key: 'grid', className: 'content-grid' }, data.map(item => React.createElement(getCardComponent(item.category), { key: item.id, item, onShowDetails: handleShowDetails }))),
             hasMore && !loadingMore && React.createElement('div', { key: 'load-more', className: 'load-more-container' },
-                React.createElement('button', { className: 'load-more-button', onClick: () => fetchData(currentPage, lastDoc) }, 'Cargar más')
+                React.createElement('button', { className: 'load-more-button', onClick: handleLoadMore }, 'Cargar más')
             ),
             loadingMore && React.createElement('div', { key: 'loading-more-spinner', className: 'loading-spinner', style: { marginTop: '2rem' } })
         ]);
