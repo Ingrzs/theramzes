@@ -1,3 +1,5 @@
+
+
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getFirestore, collection, getDocs, getDoc, doc, query, where, orderBy, limit, startAfter } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import React, { useState, useEffect, useCallback, useRef } from 'https://esm.sh/react@18';
@@ -162,6 +164,7 @@ const GeneratorPage = () => {
     // Config settings
     const [font, setFont] = useState('font-inter'); 
     const [align, setAlign] = useState('text-left');
+    const [theme, setTheme] = useState('dark'); // 'dark' or 'light'
     
     // Input Text (multiline)
     const [inputText, setInputText] = useState('Haz clic en el nombre o foto para editar.\nEscribe aquí tu frase.\nUsa "Enter" para crear nuevas imágenes.');
@@ -191,6 +194,12 @@ const GeneratorPage = () => {
         }
     };
 
+    const handleClearText = () => {
+        if (window.confirm("¿Borrar todo el texto?")) {
+            setInputText("");
+        }
+    };
+
     const handleGenerate = async () => {
         // Split text by newlines and filter empty lines
         const lines = inputText.split('\n').map(l => l.trim()).filter(l => l.length > 0).slice(0, 3); // Max 3
@@ -203,6 +212,9 @@ const GeneratorPage = () => {
         setIsGenerating(true);
         setGeneratedImages([]);
         
+        // Set background color based on theme
+        const bgColor = theme === 'dark' ? '#000000' : '#ffffff';
+
         // Esperamos un momento para que el DOM oculto se renderice
         setTimeout(async () => {
             const newImages = [];
@@ -215,7 +227,7 @@ const GeneratorPage = () => {
                         const dataUrl = await toPng(nodes[i], { 
                             quality: 1.0,
                             pixelRatio: 3, // High quality
-                            backgroundColor: '#000000' 
+                            backgroundColor: bgColor 
                         });
                         newImages.push(dataUrl);
                     } catch (err) {
@@ -234,11 +246,15 @@ const GeneratorPage = () => {
     const handleOpenImage = (dataUrl) => {
         const win = window.open();
         if (win) {
+            // Check if image is white (light mode) to adjust the viewer background
+            const viewerBg = theme === 'light' ? '#e0e0e0' : '#121212';
+            const textColor = theme === 'light' ? '#000000' : '#e0e0e0';
+            
             win.document.write(`
                 <html>
-                    <body style="background:#121212; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; margin:0;">
+                    <body style="background:${viewerBg}; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; margin:0;">
                         <img src="${dataUrl}" style="max-width:90%; max-height:80vh; box-shadow:0 0 20px rgba(0,0,0,0.5); border-radius:10px;" />
-                        <p style="color:#e0e0e0; font-family:sans-serif; margin-top:20px;">Mantén presionada la imagen para guardarla.</p>
+                        <p style="color:${textColor}; font-family:sans-serif; margin-top:20px;">Mantén presionada la imagen para guardarla.</p>
                     </body>
                 </html>
             `);
@@ -250,7 +266,7 @@ const GeneratorPage = () => {
     // Helper component for the card UI
     const TweetCardUI = ({ txt, isEditable = false }) => (
         React.createElement('div', { 
-            className: `tweet-card ${font} ${align} ${!isEditable ? 'tweet-card-batch' : ''}`,
+            className: `tweet-card ${theme} ${font} ${align} ${!isEditable ? 'tweet-card-batch' : ''}`,
             style: !isEditable ? { marginBottom: '20px' } : {} 
         }, [
             React.createElement('div', { key: 'header', className: 'tweet-header' }, [
@@ -292,7 +308,7 @@ const GeneratorPage = () => {
         ])
     );
 
-    // Estilos explícitos para las opciones del select para asegurar legibilidad
+    // Estilos explícitos para las opciones del select para asegurar legibilidad (aunque CSS global también lo cubre)
     const optionStyle = { backgroundColor: '#1e1e1e', color: '#e0e0e0' };
 
     return React.createElement('div', { className: 'generator-container' }, [
@@ -306,7 +322,7 @@ const GeneratorPage = () => {
             onChange: handleImageUpload 
         }),
 
-        React.createElement('h2', { key: 'title', style: { textAlign: 'center' } }, 'Generador de Frases (Dark Mode)'),
+        React.createElement('h2', { key: 'title', style: { textAlign: 'center' } }, 'Generador de Frases'),
         
         // Live Preview Title with instructions
         React.createElement('p', { key: 'instructions', style: { textAlign: 'center', color: '#a0a0a0', fontSize: '0.9rem', marginBottom: '1rem' } }, 'Haz clic en el texto o foto de la tarjeta para editarlos.'),
@@ -345,11 +361,25 @@ const GeneratorPage = () => {
                         React.createElement('button', { className: `control-btn ${align === 'text-center' ? 'active' : ''}`, onClick: () => setAlign('text-center') }, 'Cen'),
                         React.createElement('button', { className: `control-btn ${align === 'text-right' ? 'active' : ''}`, onClick: () => setAlign('text-right') }, 'Der'),
                     ])
+                ]),
+                React.createElement('div', { className: 'control-group' }, [
+                    React.createElement('label', {}, 'Tema'),
+                    React.createElement('div', { className: 'control-btn-group' }, [
+                        React.createElement('button', { className: `control-btn ${theme === 'dark' ? 'active' : ''}`, onClick: () => setTheme('dark') }, 'Oscuro'),
+                        React.createElement('button', { className: `control-btn ${theme === 'light' ? 'active' : ''}`, onClick: () => setTheme('light') }, 'Claro'),
+                    ])
                 ])
             ]),
             // Row 2: Text Area
             React.createElement('div', { key: 'row4', className: 'control-group' }, [
-                React.createElement('label', {}, 'Contenido del Tweet (Separa con "Enter" para crear múltiples imágenes)'),
+                React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' } }, [
+                    React.createElement('label', {}, 'Contenido del Tweet (Separa con "Enter" para crear múltiples imágenes)'),
+                    React.createElement('button', { 
+                        onClick: handleClearText,
+                        className: 'control-action-btn',
+                        style: { padding: '0.2rem 0.5rem', fontSize: '0.8rem' }
+                    }, 'Limpiar Texto')
+                ]),
                 React.createElement('textarea', { 
                     className: 'control-input', 
                     rows: 4, 
