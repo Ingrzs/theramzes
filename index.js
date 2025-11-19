@@ -1,8 +1,5 @@
 
 
-
-
-
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getFirestore, collection, getDocs, getDoc, doc, query, where, orderBy, limit, startAfter } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import React, { useState, useEffect, useCallback, useRef } from 'https://esm.sh/react@18';
@@ -425,6 +422,18 @@ const GeneratorPage = () => {
             )
         ]),
 
+        // Feedback / Bulk Request Notice
+        React.createElement('div', { key: 'feedback', className: 'feedback-container' }, [
+            React.createElement('h4', { className: 'feedback-title' }, '💡 ¿Necesitas generar muchas imágenes?'),
+            React.createElement('p', { className: 'feedback-text' }, 
+                'Si necesitas generar 100+ frases desde un Excel o tienes sugerencias para mejorar esta herramienta, contáctame. Ofrezco servicios de generación masiva y escucho tu feedback.'
+            ),
+            React.createElement('a', { 
+                href: 'contacto.html?subject=Servicios / Lotes Masivos', 
+                className: 'feedback-link' 
+            }, '📩 Solicitar Lotes o Enviar Sugerencia')
+        ]),
+
         // Hidden Batch Rendering Area (off-screen but rendered)
         isGenerating && React.createElement('div', { 
             key: 'batch-render', 
@@ -456,6 +465,10 @@ const ContactForm = () => {
         window.location.href = `mailto:theramzesyt@gmail.com?subject=${encodeURIComponent(formData.get('subject'))}&body=${encodeURIComponent(body)}`;
         alert('Se abrirá tu cliente de correo para enviar el mensaje. ¡Gracias!');
     };
+
+    // Leer parámetro 'subject' de la URL para pre-llenar el formulario
+    const defaultSubject = new URLSearchParams(window.location.search).get('subject') || "";
+
     return React.createElement('div', { className: 'contact-container' }, [
         React.createElement('h2', { key: 'title' }, 'Contacto'),
         React.createElement('form', { key: 'form', onSubmit: handleSubmit, className: 'contact-form' }, [
@@ -463,10 +476,14 @@ const ContactForm = () => {
             React.createElement('div', { key: 'email-group', className: 'form-group' }, [React.createElement('label', { htmlFor: 'email' }, 'Correo Electrónico'), React.createElement('input', { type: 'email', id: 'email', name: 'email', required: true })]),
             React.createElement('div', { key: 'subject-group', className: 'form-group' }, [
                 React.createElement('label', { htmlFor: 'subject' }, 'Asunto'),
-                React.createElement('select', { id: 'subject', name: 'subject', required: true, defaultValue: "" }, [
+                React.createElement('select', { id: 'subject', name: 'subject', required: true, defaultValue: defaultSubject }, [
                     React.createElement('option', { value: '', disabled: true }, 'Selecciona un motivo...'),
-                    React.createElement('option', { value: 'Consulta General' }, 'Consulta General'), React.createElement('option', { value: 'Propuesta de Colaboración' }, 'Propuesta de Colaboración'),
-                    React.createElement('option', { value: 'Reportar un Error' }, 'Reportar un Error'), React.createElement('option', { value: 'Sugerencia' }, 'Sugerencia'), React.createElement('option', { value: 'Otro' }, 'Otro')
+                    React.createElement('option', { value: 'Consulta General' }, 'Consulta General'), 
+                    React.createElement('option', { value: 'Propuesta de Colaboración' }, 'Propuesta de Colaboración'),
+                    React.createElement('option', { value: 'Servicios / Lotes Masivos' }, 'Servicios / Lotes Masivos / Generador'),
+                    React.createElement('option', { value: 'Reportar un Error' }, 'Reportar un Error'), 
+                    React.createElement('option', { value: 'Sugerencia' }, 'Sugerencia'), 
+                    React.createElement('option', { value: 'Otro' }, 'Otro')
                 ])
             ]),
             React.createElement('div', { key: 'message-group', className: 'form-group' }, [React.createElement('label', { htmlFor: 'message' }, 'Mensaje'), React.createElement('textarea', { id: 'message', name: 'message', rows: 5, required: true })]),
