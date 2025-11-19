@@ -1,5 +1,6 @@
 
 
+
 :root {
     --bg-primary: #121212;
     --bg-secondary: #1e1e1e;
@@ -774,7 +775,7 @@ footer {
     border: 1px solid var(--border-color);
     display: flex;
     justify-content: center;
-    align-items: center;
+    /* Removed align-items: center to allow card to grow naturally from top */
     min-height: 200px;
     overflow: hidden;
 }
@@ -789,6 +790,13 @@ footer {
     position: relative;
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     transition: background-color 0.3s ease, color 0.3s ease;
+    
+    /* Flex layout to ensure content grows properly without separating weirdly */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start; /* Forces content to top */
+    height: auto; /* Allow growth */
+    min-height: auto;
 }
 
 /* Dark Mode Card (Default) */
@@ -830,6 +838,7 @@ footer {
     display: flex;
     align-items: center;
     margin-bottom: 1.5rem;
+    flex-shrink: 0; /* Prevent header from shrinking */
 }
 
 .tweet-avatar {
@@ -868,6 +877,11 @@ footer {
     font-size: 1.5rem;
     line-height: 1.4;
     white-space: pre-wrap;
+    
+    /* Fixes for long non-breaking text overflow */
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
 }
 
 /* Editable Inputs inside Card */
