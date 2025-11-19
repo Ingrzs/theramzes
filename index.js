@@ -1,6 +1,8 @@
 
 
 
+
+
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getFirestore, collection, getDocs, getDoc, doc, query, where, orderBy, limit, startAfter } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import React, { useState, useEffect, useCallback, useRef } from 'https://esm.sh/react@18';
@@ -347,10 +349,17 @@ const GeneratorPage = () => {
                             onChange: e => setFont(e.target.value) 
                         }, [
                             React.createElement('option', { value: 'font-inter', style: optionStyle }, 'Inter (Moderna)'),
-                            React.createElement('option', { value: 'font-montserrat', style: optionStyle }, 'Montserrat (Geométrica)'),
+                            React.createElement('option', { value: 'font-poppins', style: optionStyle }, 'Poppins (Geométrica)'),
+                            React.createElement('option', { value: 'font-lato', style: optionStyle }, 'Lato (Elegante)'),
+                            React.createElement('option', { value: 'font-montserrat', style: optionStyle }, 'Montserrat (Limpia)'),
                             React.createElement('option', { value: 'font-bebas', style: optionStyle }, 'Bebas Neue (Impacto)'),
-                            React.createElement('option', { value: 'font-merriweather', style: optionStyle }, 'Merriweather (Clásica)'),
-                            React.createElement('option', { value: 'font-serif', style: optionStyle }, 'Playfair (Elegante)'),
+                            React.createElement('option', { value: 'font-oswald', style: optionStyle }, 'Oswald (Condensada)'),
+                            React.createElement('option', { value: 'font-merriweather', style: optionStyle }, 'Merriweather (Serif)'),
+                            React.createElement('option', { value: 'font-abril', style: optionStyle }, 'Abril Fatface (Fashion)'),
+                            React.createElement('option', { value: 'font-serif', style: optionStyle }, 'Playfair (Clásica)'),
+                            React.createElement('option', { value: 'font-caveat', style: optionStyle }, 'Caveat (Manuscrita)'),
+                            React.createElement('option', { value: 'font-shadows', style: optionStyle }, 'Shadows Into Light (Rotulador)'),
+                            React.createElement('option', { value: 'font-pacifico', style: optionStyle }, 'Pacifico (Brush)'),
                             React.createElement('option', { value: 'font-dancing', style: optionStyle }, 'Dancing Script (Cursiva)'),
                             React.createElement('option', { value: 'font-inconsolata', style: optionStyle }, 'Inconsolata (Tech)'),
                         ])
@@ -362,6 +371,7 @@ const GeneratorPage = () => {
                         React.createElement('button', { className: `control-btn ${align === 'text-left' ? 'active' : ''}`, onClick: () => setAlign('text-left') }, 'Izq'),
                         React.createElement('button', { className: `control-btn ${align === 'text-center' ? 'active' : ''}`, onClick: () => setAlign('text-center') }, 'Cen'),
                         React.createElement('button', { className: `control-btn ${align === 'text-right' ? 'active' : ''}`, onClick: () => setAlign('text-right') }, 'Der'),
+                        React.createElement('button', { className: `control-btn ${align === 'text-justify' ? 'active' : ''}`, onClick: () => setAlign('text-justify') }, 'Jus'),
                     ])
                 ]),
                 React.createElement('div', { className: 'control-group' }, [
