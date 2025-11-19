@@ -1,5 +1,6 @@
 
 
+
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getFirestore, collection, getDocs, getDoc, doc, query, where, orderBy, limit, startAfter } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import React, { useState, useEffect, useCallback, useRef } from 'https://esm.sh/react@18';
@@ -195,8 +196,9 @@ const GeneratorPage = () => {
     };
 
     const handleClearText = () => {
-        if (window.confirm("¿Borrar todo el texto?")) {
+        if (window.confirm("¿Borrar todo el texto y los resultados?")) {
             setInputText("");
+            setGeneratedImages([]); // También limpiamos las imágenes generadas
         }
     };
 
