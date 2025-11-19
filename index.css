@@ -719,6 +719,12 @@ footer {
     width: 100%;
 }
 
+/* Ensures dropdown options are readable in all browsers/themes */
+.control-select select option {
+    background-color: #1e1e1e;
+    color: #e0e0e0;
+}
+
 .control-btn-group {
     display: flex;
     border: 1px solid var(--border-color);
@@ -746,6 +752,21 @@ footer {
     color: white;
 }
 
+.control-action-btn {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.control-action-btn:hover {
+    background-color: #333;
+}
+
 .preview-area {
     padding: 1rem;
     background-color: var(--bg-tertiary);
@@ -760,16 +781,35 @@ footer {
 
 /* The Tweet Card Design */
 .tweet-card {
-    background-color: #000000; /* Pure black for tweet style, or very dark grey */
     width: 100%;
     max-width: 600px;
     padding: 2rem;
-    border-radius: 0; /* Tweets usually square-ish on screenshots, or slight radius */
-    color: #ffffff;
+    border-radius: 0;
     font-family: 'Inter', sans-serif;
     position: relative;
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
+
+/* Dark Mode Card (Default) */
+.tweet-card.dark {
+    background-color: #000000;
+    color: #ffffff;
+}
+.tweet-card.dark .tweet-name { color: #ffffff; }
+.tweet-card.dark .tweet-username { color: #71767b; }
+.tweet-card.dark .tweet-body { color: #ffffff; }
+
+/* Light Mode Card */
+.tweet-card.light {
+    background-color: #ffffff;
+    color: #000000;
+    border: 1px solid #e1e8ed; /* Subtle border for light mode */
+}
+.tweet-card.light .tweet-name { color: #000000; }
+.tweet-card.light .tweet-username { color: #536471; }
+.tweet-card.light .tweet-body { color: #0f1419; }
+
 
 /* Fonts Mapping */
 .font-inter { font-family: 'Inter', sans-serif; }
@@ -816,12 +856,10 @@ footer {
 .tweet-name {
     font-weight: 700;
     font-size: 1.1rem;
-    color: #ffffff;
     line-height: 1.2;
 }
 
 .tweet-username {
-    color: #71767b;
     font-size: 0.95rem;
     margin-top: 2px;
 }
@@ -830,14 +868,13 @@ footer {
     font-size: 1.5rem;
     line-height: 1.4;
     white-space: pre-wrap;
-    color: #ffffff;
 }
 
 /* Editable Inputs inside Card */
 .editable-input {
     background: transparent;
     border: 1px dashed transparent;
-    color: inherit;
+    color: inherit; /* Hereda el color del padre (Light/Dark) */
     font-family: inherit;
     font-weight: inherit;
     font-size: inherit;
