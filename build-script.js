@@ -1,4 +1,6 @@
 
+
+
 import fs from 'fs';
 import path from 'path';
 
@@ -9,6 +11,7 @@ const filesToDeploy = [
     'index.html',
     'videos.html',
     'descargas.html',
+    'generador.html',
     'tutoriales.html',
     'recursos.html',
     'sobre-mi.html',

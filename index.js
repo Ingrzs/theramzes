@@ -1,9 +1,12 @@
 
 
 
+
+
+
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getFirestore, collection, getDocs, getDoc, doc, query, where, orderBy, limit, startAfter } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import React, { useState, useEffect, useCallback } from 'https://esm.sh/react@18';
+import React, { useState, useEffect, useCallback, useRef } from 'https://esm.sh/react@18';
 import ReactDOM from 'https://esm.sh/react-dom@18/client';
 import Fuse from 'https://esm.sh/fuse.js@7.0.0';
 
@@ -132,6 +135,231 @@ const AboutMe = () => (
         ])
     ])
 );
+
+// --- Generator Page Component ---
+const GeneratorPage = () => {
+    // Default profile data with LocalStorage persistence
+    const [name, setName] = useState(() => {
+        try { return localStorage.getItem('theramzes_gen_name') || 'Usuario'; } catch (e) { return 'Usuario'; }
+    });
+    const [username, setUsername] = useState(() => {
+        try { return localStorage.getItem('theramzes_gen_username') || '@usuario'; } catch (e) { return '@usuario'; }
+    });
+    const [avatarUrl, setAvatarUrl] = useState(() => {
+        try { return localStorage.getItem('theramzes_gen_avatar') || 'https://yt3.googleusercontent.com/UsEE3B7HZCqYlFrE6zI601Pq-_moV7q1diFWggkrSM5yI7imCvZWnBAjnOy5gp6_xx1LAZTUHg=s160-c-k-c0x00ffffff-no-rj'; } catch (e) { return 'https://yt3.googleusercontent.com/UsEE3B7HZCqYlFrE6zI601Pq-_moV7q1diFWggkrSM5yI7imCvZWnBAjnOy5gp6_xx1LAZTUHg=s160-c-k-c0x00ffffff-no-rj'; }
+    });
+    
+    // Save changes to LocalStorage
+    useEffect(() => { try { localStorage.setItem('theramzes_gen_name', name); } catch (e) {} }, [name]);
+    useEffect(() => { try { localStorage.setItem('theramzes_gen_username', username); } catch (e) {} }, [username]);
+    useEffect(() => { 
+        try { 
+            localStorage.setItem('theramzes_gen_avatar', avatarUrl); 
+        } catch (e) {
+            console.warn("La imagen es demasiado grande para guardarla localmente, pero se usará en la sesión actual.");
+        } 
+    }, [avatarUrl]);
+
+    // Config settings
+    const [font, setFont] = useState('font-inter'); // font-inter, font-serif, font-mono
+    const [align, setAlign] = useState('text-left'); // text-left, text-center, text-right
+    
+    // Input Text (multiline)
+    const [inputText, setInputText] = useState('Escribe aquí tu frase...\nUsa "Enter" para separar ideas.');
+
+    // State for generated images
+    const [generatedImages, setGeneratedImages] = useState([]);
+    const [isGenerating, setIsGenerating] = useState(false);
+
+    // Ref for the preview card (what the user sees live)
+    const previewRef = useRef(null);
+    // Ref for the hidden container used for batch generation
+    const batchContainerRef = useRef(null);
+
+    // Preview Logic: The card updates automatically via React state binding.
+
+    const handleImageUpload = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setAvatarUrl(reader.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleGenerate = async () => {
+        // Split text by newlines and filter empty lines
+        const lines = inputText.split('\n').map(l => l.trim()).filter(l => l.length > 0).slice(0, 3); // Max 3
+        
+        if (lines.length === 0) {
+            alert("Por favor escribe al menos una frase.");
+            return;
+        }
+
+        setIsGenerating(true);
+        setGeneratedImages([]);
+        
+        // We need a small delay to allow the hidden DOM nodes (mapped from 'lines') to render
+        // before we try to capture them.
+        setTimeout(async () => {
+            const newImages = [];
+            if (window.htmlToImage && batchContainerRef.current) {
+                const nodes = batchContainerRef.current.querySelectorAll('.tweet-card-batch');
+                
+                for (let i = 0; i < nodes.length; i++) {
+                    try {
+                        const dataUrl = await window.htmlToImage.toPng(nodes[i], { 
+                            quality: 1.0,
+                            pixelRatio: 2, // Better quality for mobile
+                            backgroundColor: '#000000' // Ensure background is captured
+                        });
+                        newImages.push(dataUrl);
+                    } catch (err) {
+                        console.error("Error generating image:", err);
+                    }
+                }
+            }
+            setGeneratedImages(newImages);
+            setIsGenerating(false);
+        }, 500); // 500ms wait for DOM render
+    };
+
+    const handleOpenImage = (dataUrl) => {
+        const win = window.open();
+        if (win) {
+            win.document.write(`<img src="${dataUrl}" style="width:100%; display:block; margin: 0 auto;" />`);
+            win.document.write(`<p style="text-align:center; font-family:sans-serif; color:#333; margin-top:20px;">Mantén presionada la imagen para guardarla.</p>`);
+        } else {
+            alert("Por favor permite las ventanas emergentes para ver la imagen.");
+        }
+    };
+
+    // Helper component for the card itself to avoid code duplication
+    const TweetCardUI = ({ txt, isPreview = false }) => (
+        React.createElement('div', { 
+            className: `tweet-card ${font} ${align} ${!isPreview ? 'tweet-card-batch' : ''}`,
+            style: !isPreview ? { marginBottom: '20px' } : {} // Spacing for batch rendering
+        }, [
+            React.createElement('div', { key: 'header', className: 'tweet-header' }, [
+                React.createElement('img', { key: 'avatar', src: avatarUrl, className: 'tweet-avatar', alt: 'avatar', onError: (e) => e.target.src = PLACEHOLDER_IMAGE }),
+                React.createElement('div', { key: 'info', className: 'tweet-user-info text-left' }, [
+                    React.createElement('div', { key: 'name', className: 'tweet-name' }, name),
+                    React.createElement('div', { key: 'user', className: 'tweet-username' }, username)
+                ])
+            ]),
+            React.createElement('div', { key: 'body', className: 'tweet-body' }, txt)
+        ])
+    );
+
+    return React.createElement('div', { className: 'generator-container' }, [
+        React.createElement('h2', { key: 'title', style: { textAlign: 'center' } }, 'Generador de Frases'),
+        
+        // Control Panel
+        React.createElement('div', { key: 'controls', className: 'control-panel' }, [
+            // Row 1: User Info
+            React.createElement('div', { key: 'row1', className: 'control-row' }, [
+                React.createElement('div', { className: 'control-group' }, [
+                    React.createElement('label', {}, 'Nombre'),
+                    React.createElement('input', { className: 'control-input', value: name, onChange: e => setName(e.target.value) })
+                ]),
+                React.createElement('div', { className: 'control-group' }, [
+                    React.createElement('label', {}, 'Usuario (@)'),
+                    React.createElement('input', { className: 'control-input', value: username, onChange: e => setUsername(e.target.value) })
+                ]),
+            ]),
+             // Row 2: Avatar Upload
+             React.createElement('div', { key: 'row2', className: 'control-group' }, [
+                React.createElement('label', {}, 'Foto de Perfil (Subir imagen)'),
+                React.createElement('input', { 
+                    type: 'file', 
+                    accept: 'image/*',
+                    className: 'control-input', 
+                    onChange: handleImageUpload 
+                })
+            ]),
+            // Row 3: Settings
+            React.createElement('div', { key: 'row3', className: 'control-row' }, [
+                 React.createElement('div', { className: 'control-group' }, [
+                    React.createElement('label', {}, 'Fuente'),
+                    React.createElement('div', { className: 'control-select' }, 
+                        React.createElement('select', { 
+                            style: { background: 'transparent', border: 'none', color: 'inherit', width: '100%' },
+                            value: font, 
+                            onChange: e => setFont(e.target.value) 
+                        }, [
+                            React.createElement('option', { value: 'font-inter' }, 'Inter (Moderna)'),
+                            React.createElement('option', { value: 'font-serif' }, 'Serif (Elegante)'),
+                            React.createElement('option', { value: 'font-mono' }, 'Mono (Código)')
+                        ])
+                    )
+                ]),
+                React.createElement('div', { className: 'control-group' }, [
+                    React.createElement('label', {}, 'Alineación'),
+                    React.createElement('div', { className: 'control-btn-group' }, [
+                        React.createElement('button', { className: `control-btn ${align === 'text-left' ? 'active' : ''}`, onClick: () => setAlign('text-left') }, 'L'),
+                        React.createElement('button', { className: `control-btn ${align === 'text-center' ? 'active' : ''}`, onClick: () => setAlign('text-center') }, 'C'),
+                        React.createElement('button', { className: `control-btn ${align === 'text-right' ? 'active' : ''}`, onClick: () => setAlign('text-right') }, 'R'),
+                    ])
+                ])
+            ]),
+            // Row 4: Text Area
+            React.createElement('div', { key: 'row4', className: 'control-group' }, [
+                React.createElement('label', {}, 'Texto (Cada línea es una imagen nueva, máx 3)'),
+                React.createElement('textarea', { 
+                    className: 'control-input', 
+                    rows: 5, 
+                    value: inputText, 
+                    onChange: e => setInputText(e.target.value) 
+                })
+            ]),
+        ]),
+
+        // Live Preview Title
+        React.createElement('h3', { key: 'preview-title', style: { marginTop: '1rem' } }, 'Vista Previa en Vivo'),
+
+        // Live Preview Area
+        React.createElement('div', { key: 'preview', className: 'preview-area' }, [
+             React.createElement(TweetCardUI, { key: 'live-card', txt: inputText.split('\n')[0] || 'Escribe algo...', isPreview: true })
+        ]),
+
+        // Generate Button
+        React.createElement('button', { 
+            key: 'generate-btn', 
+            className: 'action-btn', 
+            onClick: handleGenerate,
+            disabled: isGenerating
+        }, isGenerating ? 'Generando...' : 'Generar Imágenes (Max 3)'),
+
+        // Results Area
+        generatedImages.length > 0 && React.createElement('div', { key: 'results', className: 'generated-results' }, [
+            React.createElement('h3', { key: 'res-title', className: 'text-center' }, 'Tus Imágenes'),
+            generatedImages.map((img, idx) => 
+                React.createElement('div', { key: idx, className: 'result-item' }, [
+                    React.createElement('img', { src: img, className: 'result-img' }),
+                    React.createElement('button', { 
+                        className: 'card-button', 
+                        style: { width: '100%' },
+                        onClick: () => handleOpenImage(img) 
+                    }, 'Abrir Imagen (Guardar)')
+                ])
+            )
+        ]),
+
+        // Hidden Batch Rendering Area (off-screen)
+        isGenerating && React.createElement('div', { 
+            key: 'batch-render', 
+            ref: batchContainerRef,
+            style: { position: 'absolute', left: '-9999px', top: 0, width: '600px' } // Fixed width for consistency
+        }, 
+            inputText.split('\n').map(l => l.trim()).filter(l => l.length > 0).slice(0, 3).map((line, idx) => 
+                React.createElement(TweetCardUI, { key: idx, txt: line, isPreview: false })
+            )
+        )
+    ]);
+};
+
 
 const ContactForm = () => {
     const handleSubmit = (e) => {
@@ -368,6 +596,12 @@ const App = () => {
 
     useEffect(() => {
         const loadInitialData = async () => {
+            // Si estamos en la página del generador, no necesitamos cargar datos de Firebase para la grilla
+            if (currentPage === 'generador') {
+                setLoading(false);
+                return;
+            }
+
             setLoading(true);
             setError(null);
             setData([]);
@@ -479,6 +713,7 @@ const App = () => {
             return React.createElement('div', { className: 'content-grid' }, searchResults.map(item => React.createElement(getCardComponent(item.category), { key: item.id, item, onShowDetails: handleShowDetails })));
         }
         
+        if (currentPage === 'generador') return React.createElement(GeneratorPage);
         if (currentPage === 'sobre-mi') return React.createElement(AboutMe);
         if (currentPage === 'contacto') return React.createElement(ContactForm);
         if (currentPage === 'recursos') return React.createElement(ResourcesPage, {
@@ -509,6 +744,7 @@ const App = () => {
         'imagenes': { name: 'Imágenes', path: './' },
         'videos': { name: 'Videos', path: 'videos.html' },
         'descargas': { name: 'Descargas', path: 'descargas.html' },
+        'generador': { name: 'Generador', path: 'generador.html' },
         'tutoriales': { name: 'Tutoriales', path: 'tutoriales.html' },
         'recursos': { name: 'Recursos', path: 'recursos.html' },
         'sobre-mi': { name: 'Sobre Mí', path: 'sobre-mi.html' },
