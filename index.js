@@ -1,16 +1,9 @@
-
-
-
-
-
-
-
-
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getFirestore, collection, getDocs, getDoc, doc, query, where, orderBy, limit, startAfter } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import React, { useState, useEffect, useCallback, useRef } from 'https://esm.sh/react@18';
 import ReactDOM from 'https://esm.sh/react-dom@18/client';
 import Fuse from 'https://esm.sh/fuse.js@7.0.0';
+import { toPng } from 'https://esm.sh/html-to-image@1.11.11';
 
 // La configuración de Firebase se inyecta aquí durante el proceso de despliegue.
 const firebaseConfig = {
@@ -210,15 +203,16 @@ const GeneratorPage = () => {
         setIsGenerating(true);
         setGeneratedImages([]);
         
-        // We need a small delay to allow the hidden DOM nodes (mapped from 'lines') to render
+        // Esperamos un momento para que el DOM oculto se renderice
         setTimeout(async () => {
             const newImages = [];
-            if (window.htmlToImage && batchContainerRef.current) {
+            if (batchContainerRef.current) {
                 const nodes = batchContainerRef.current.querySelectorAll('.tweet-card-batch');
                 
                 for (let i = 0; i < nodes.length; i++) {
                     try {
-                        const dataUrl = await window.htmlToImage.toPng(nodes[i], { 
+                        // Usamos toPng importado de esm.sh
+                        const dataUrl = await toPng(nodes[i], { 
                             quality: 1.0,
                             pixelRatio: 3, // High quality
                             backgroundColor: '#000000' 
@@ -226,9 +220,11 @@ const GeneratorPage = () => {
                         newImages.push(dataUrl);
                     } catch (err) {
                         console.error("Error generating image:", err);
-                        alert("Hubo un error generando la imagen. Intenta de nuevo.");
                     }
                 }
+            }
+            if (newImages.length === 0) {
+                 alert("Hubo un error generando las imágenes. Inténtalo de nuevo.");
             }
             setGeneratedImages(newImages);
             setIsGenerating(false);
@@ -296,6 +292,9 @@ const GeneratorPage = () => {
         ])
     );
 
+    // Estilos explícitos para las opciones del select para asegurar legibilidad
+    const optionStyle = { backgroundColor: '#1e1e1e', color: '#e0e0e0' };
+
     return React.createElement('div', { className: 'generator-container' }, [
         // Hidden File Input
         React.createElement('input', { 
@@ -329,13 +328,13 @@ const GeneratorPage = () => {
                             value: font, 
                             onChange: e => setFont(e.target.value) 
                         }, [
-                            React.createElement('option', { value: 'font-inter' }, 'Inter (Moderna)'),
-                            React.createElement('option', { value: 'font-montserrat' }, 'Montserrat (Geométrica)'),
-                            React.createElement('option', { value: 'font-bebas' }, 'Bebas Neue (Impacto)'),
-                            React.createElement('option', { value: 'font-merriweather' }, 'Merriweather (Clásica)'),
-                            React.createElement('option', { value: 'font-serif' }, 'Playfair (Elegante)'),
-                            React.createElement('option', { value: 'font-dancing' }, 'Dancing Script (Cursiva)'),
-                            React.createElement('option', { value: 'font-inconsolata' }, 'Inconsolata (Tech)'),
+                            React.createElement('option', { value: 'font-inter', style: optionStyle }, 'Inter (Moderna)'),
+                            React.createElement('option', { value: 'font-montserrat', style: optionStyle }, 'Montserrat (Geométrica)'),
+                            React.createElement('option', { value: 'font-bebas', style: optionStyle }, 'Bebas Neue (Impacto)'),
+                            React.createElement('option', { value: 'font-merriweather', style: optionStyle }, 'Merriweather (Clásica)'),
+                            React.createElement('option', { value: 'font-serif', style: optionStyle }, 'Playfair (Elegante)'),
+                            React.createElement('option', { value: 'font-dancing', style: optionStyle }, 'Dancing Script (Cursiva)'),
+                            React.createElement('option', { value: 'font-inconsolata', style: optionStyle }, 'Inconsolata (Tech)'),
                         ])
                     )
                 ]),
@@ -384,11 +383,20 @@ const GeneratorPage = () => {
             )
         ]),
 
-        // Hidden Batch Rendering Area (off-screen)
+        // Hidden Batch Rendering Area (off-screen but rendered)
         isGenerating && React.createElement('div', { 
             key: 'batch-render', 
             ref: batchContainerRef,
-            style: { position: 'absolute', left: '-9999px', top: 0, width: '600px' } // Fixed width for consistency
+            // Usamos opacity 0 y zIndex negativo en lugar de posición muy lejana para asegurar que el navegador lo renderiza
+            style: { 
+                position: 'fixed', 
+                left: '0', 
+                top: '0', 
+                width: '600px', 
+                zIndex: -1000,
+                opacity: 0,
+                pointerEvents: 'none'
+            } 
         }, 
             inputText.split('\n').map(l => l.trim()).filter(l => l.length > 0).slice(0, 3).map((line, idx) => 
                 React.createElement(TweetCardUI, { key: idx, txt: line, isEditable: false })
