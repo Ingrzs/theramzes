@@ -492,6 +492,7 @@ const App = () => {
     const [hasMore, setHasMore] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
     const ITEMS_PER_PAGE = 12;
+    const loaderRef = useRef(null);
 
     useEffect(() => {
         const rootEl = document.getElementById('root');
@@ -552,7 +553,7 @@ const App = () => {
         fetchInitialContent();
     }, [page]);
 
-    const handleLoadMore = async () => {
+    const handleLoadMore = useCallback(async () => {
         if (!hasMore || loadingMore || !lastDoc || ['generador', 'sobre-mi', 'contacto', 'recursos'].includes(page)) return;
         
         setLoadingMore(true);
@@ -580,7 +581,28 @@ const App = () => {
         } finally {
             setLoadingMore(false);
         }
-    };
+    }, [hasMore, loadingMore, lastDoc, page]);
+
+    // Infinite Scroll Observer
+    useEffect(() => {
+        const observer = new IntersectionObserver((entries) => {
+            const target = entries[0];
+            if (target.isIntersecting && hasMore && !loadingMore && !loading) {
+                handleLoadMore();
+            }
+        }, { rootMargin: '200px' });
+
+        if (loaderRef.current) {
+            observer.observe(loaderRef.current);
+        }
+
+        return () => {
+            if (loaderRef.current) {
+                observer.unobserve(loaderRef.current);
+            }
+            observer.disconnect();
+        };
+    }, [hasMore, loadingMore, loading, handleLoadMore]);
 
     const filteredItems = items.filter(item => {
         if (!searchTerm) return true;
@@ -610,14 +632,12 @@ const App = () => {
                 }
                 return null;
             })),
-            // Load More Button for optimized loading
-            hasMore && !searchTerm && React.createElement('div', { className: 'load-more-container' }, 
-                React.createElement('button', { 
-                    className: 'load-more-button', 
-                    onClick: handleLoadMore,
-                    disabled: loadingMore
-                }, loadingMore ? 'Cargando...' : 'Cargar más')
-            )
+            // Infinite Scroll Sentinel
+            hasMore && !searchTerm && React.createElement('div', { 
+                ref: loaderRef, 
+                className: 'loading-sentinel',
+                style: { textAlign: 'center', padding: '2rem', opacity: 0.7, width: '100%' }
+            }, loadingMore ? React.createElement('div', {className: 'loading-spinner'}) : '')
         ]);
     };
 
