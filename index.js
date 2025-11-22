@@ -208,6 +208,57 @@ const ContactForm = () => {
     ]);
 };
 
+// --- Extract TweetCardUI Component to fix Focus Issues ---
+// This MUST be outside GeneratorPage to prevent re-mounting on every keystroke
+const TweetCardUI = ({ 
+    txt, 
+    isEditable = false, 
+    theme, 
+    font, 
+    align, 
+    avatarUrl, 
+    name, 
+    setName, 
+    username, 
+    setUsername, 
+    onAvatarClick 
+}) => (
+    React.createElement('div', { 
+        className: `tweet-card ${theme} ${font} ${align} ${!isEditable ? 'tweet-card-batch' : ''}`,
+        style: !isEditable ? { marginBottom: '20px' } : {} 
+    }, [
+        React.createElement('div', { key: 'header', className: 'tweet-header' }, [
+            React.createElement('img', { 
+                key: 'avatar', 
+                src: avatarUrl, 
+                className: 'tweet-avatar', 
+                onClick: isEditable ? onAvatarClick : undefined 
+            }),
+            React.createElement('div', { key: 'info', className: 'tweet-user-info text-left' }, [
+                isEditable 
+                ? React.createElement('input', { 
+                    key: 'name-in', 
+                    className: 'editable-input tweet-name', 
+                    value: name, 
+                    onChange: e => setName(e.target.value), 
+                    placeholder: "Nombre" 
+                })
+                : React.createElement('div', { key: 'name', className: 'tweet-name' }, name),
+                isEditable
+                ? React.createElement('input', { 
+                    key: 'user-in', 
+                    className: 'editable-input tweet-username', 
+                    value: username, 
+                    onChange: e => setUsername(e.target.value), 
+                    placeholder: "@usuario" 
+                })
+                : React.createElement('div', { key: 'user', className: 'tweet-username' }, username)
+            ])
+        ]),
+        React.createElement('div', { key: 'body', className: 'tweet-body' }, txt)
+    ])
+);
+
 // --- Generator Page Component ---
 const GeneratorPage = () => {
     const [name, setName] = useState(() => {
@@ -308,26 +359,6 @@ const GeneratorPage = () => {
         } else { alert("Permite las ventanas emergentes."); }
     };
 
-    const TweetCardUI = ({ txt, isEditable = false }) => (
-        React.createElement('div', { 
-            className: `tweet-card ${theme} ${font} ${align} ${!isEditable ? 'tweet-card-batch' : ''}`,
-            style: !isEditable ? { marginBottom: '20px' } : {} 
-        }, [
-            React.createElement('div', { key: 'header', className: 'tweet-header' }, [
-                React.createElement('img', { key: 'avatar', src: avatarUrl, className: 'tweet-avatar', onClick: isEditable ? handleAvatarClick : undefined }),
-                React.createElement('div', { key: 'info', className: 'tweet-user-info text-left' }, [
-                    isEditable 
-                    ? React.createElement('input', { key: 'name-in', className: 'editable-input tweet-name', value: name, onChange: e => setName(e.target.value), placeholder: "Nombre" })
-                    : React.createElement('div', { key: 'name', className: 'tweet-name' }, name),
-                    isEditable
-                    ? React.createElement('input', { key: 'user-in', className: 'editable-input tweet-username', value: username, onChange: e => setUsername(e.target.value), placeholder: "@usuario" })
-                    : React.createElement('div', { key: 'user', className: 'tweet-username' }, username)
-                ])
-            ]),
-            React.createElement('div', { key: 'body', className: 'tweet-body' }, txt)
-        ])
-    );
-
     const optionStyle = { backgroundColor: '#1e1e1e', color: '#e0e0e0' };
 
     return React.createElement('div', { className: 'generator-container' }, [
@@ -336,7 +367,12 @@ const GeneratorPage = () => {
         React.createElement('p', { key: 'instr', style: { textAlign: 'center', color: '#a0a0a0', fontSize: '0.9rem', marginBottom: '1rem' } }, 'Haz clic en el texto o foto de la tarjeta para editarlos.'),
 
         React.createElement('div', { key: 'preview', className: 'preview-area' }, [
-             React.createElement(TweetCardUI, { key: 'live', txt: inputText.split('\n')[0] || 'Escribe algo...', isEditable: true })
+             React.createElement(TweetCardUI, { 
+                 key: 'live', 
+                 txt: inputText.split('\n')[0] || 'Escribe algo...', 
+                 isEditable: true,
+                 theme, font, align, avatarUrl, name, setName, username, setUsername, onAvatarClick: handleAvatarClick
+             })
         ]),
 
         React.createElement('div', { key: 'controls', className: 'control-panel' }, [
@@ -409,7 +445,12 @@ const GeneratorPage = () => {
             key: 'batch', ref: batchContainerRef,
             style: { position: 'fixed', left: '0', top: '0', width: '600px', zIndex: -1000, opacity: 0, pointerEvents: 'none' } 
         }, inputText.split('\n').map(l => cleanLineText(l)).filter(l => l.length > 0).slice(0, 5).map((line, idx) => 
-            React.createElement(TweetCardUI, { key: idx, txt: line, isEditable: false })
+            React.createElement(TweetCardUI, { 
+                key: idx, 
+                txt: line, 
+                isEditable: false,
+                theme, font, align, avatarUrl, name, username // Pass required props for batch too
+            })
         ))
     ]);
 };
