@@ -1,3 +1,4 @@
+
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getFirestore, collection, getDocs, getDoc, doc, query, where, orderBy, limit, startAfter } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import React, { useState, useEffect, useCallback, useRef } from 'https://esm.sh/react@18';
@@ -266,19 +267,7 @@ const TweetCardUI = ({
                 : React.createElement('div', { key: 'user', className: 'tweet-username' }, username)
             ])
         ]),
-        React.createElement('div', { key: 'body', className: 'tweet-body' }, txt),
-        React.createElement('div', { 
-            key: 'footer', 
-            className: 'tweet-footer',
-            style: { 
-                marginTop: 'auto', 
-                paddingTop: '1.5rem', 
-                fontSize: '0.75rem', 
-                opacity: 0.5, 
-                textAlign: 'right',
-                fontFamily: 'var(--font-family)' 
-            } 
-        }, 'theramzes.com')
+        React.createElement('div', { key: 'body', className: 'tweet-body' }, txt)
     ])
 );
 
