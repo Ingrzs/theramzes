@@ -42,6 +42,17 @@ const handleImageError = (e) => {
 
 // --- Components ---
 
+const Footer = () => (
+    React.createElement('footer', {}, [
+        React.createElement('div', { style: { marginBottom: '1rem' } }, `© ${new Date().getFullYear()} TheRamzes`),
+        React.createElement('div', { style: { display: 'flex', gap: '1.5rem', justifyContent: 'center', flexWrap: 'wrap' } }, [
+            React.createElement('a', { href: 'politicas.html', className: 'footer-link' }, 'Políticas de Privacidad'),
+            React.createElement('a', { href: 'terminos.html', className: 'footer-link' }, 'Términos de Uso'),
+            React.createElement('a', { href: 'contacto.html', className: 'footer-link' }, 'Contacto')
+        ])
+    ])
+);
+
 const DetailModal = ({ item, onClose }) => {
     if (!item) return null;
     
@@ -255,7 +266,19 @@ const TweetCardUI = ({
                 : React.createElement('div', { key: 'user', className: 'tweet-username' }, username)
             ])
         ]),
-        React.createElement('div', { key: 'body', className: 'tweet-body' }, txt)
+        React.createElement('div', { key: 'body', className: 'tweet-body' }, txt),
+        React.createElement('div', { 
+            key: 'footer', 
+            className: 'tweet-footer',
+            style: { 
+                marginTop: 'auto', 
+                paddingTop: '1.5rem', 
+                fontSize: '0.75rem', 
+                opacity: 0.5, 
+                textAlign: 'right',
+                fontFamily: 'var(--font-family)' 
+            } 
+        }, 'theramzes.com')
     ])
 );
 
@@ -404,6 +427,7 @@ const GeneratorPage = () => {
                         React.createElement('button', { className: `control-btn ${align === 'text-left' ? 'active' : ''}`, onClick: () => setAlign('text-left') }, 'Izq'),
                         React.createElement('button', { className: `control-btn ${align === 'text-center' ? 'active' : ''}`, onClick: () => setAlign('text-center') }, 'Cen'),
                         React.createElement('button', { className: `control-btn ${align === 'text-right' ? 'active' : ''}`, onClick: () => setAlign('text-right') }, 'Der'),
+                        React.createElement('button', { className: `control-btn ${align === 'text-justify' ? 'active' : ''}`, onClick: () => setAlign('text-justify') }, 'Just'),
                     ])
                 ]),
                 React.createElement('div', { className: 'control-group' }, [
@@ -436,9 +460,9 @@ const GeneratorPage = () => {
         ]),
 
         React.createElement('div', { key: 'feedback', className: 'feedback-container' }, [
-            React.createElement('h4', { className: 'feedback-title' }, '💡 ¿Necesitas generar muchas imágenes?'),
-            React.createElement('p', { className: 'feedback-text' }, 'Si necesitas generar 100+ frases desde un Excel, contáctame.'),
-            React.createElement('a', { href: 'contacto.html?subject=Servicios', className: 'feedback-link' }, '📩 Solicitar Lotes')
+            React.createElement('h4', { className: 'feedback-title' }, '💡 Sugerencias y Pedidos'),
+            React.createElement('p', { className: 'feedback-text' }, '¿Tienes ideas para mejorar el generador o necesitas generar más de 100 imágenes?'),
+            React.createElement('a', { href: 'contacto.html?subject=Feedback/Lotes', className: 'feedback-link' }, '📩 Contáctame')
         ]),
 
         isGenerating && React.createElement('div', { 
@@ -449,63 +473,115 @@ const GeneratorPage = () => {
                 key: idx, 
                 txt: line, 
                 isEditable: false,
-                theme, font, align, avatarUrl, name, username // Pass required props for batch too
+                theme, font, align, avatarUrl, name, username 
             })
         ))
     ]);
 };
 
-// --- App Component (Logic restored) ---
+// --- App Component (Logic restored for Pagination) ---
 const App = () => {
     const [page, setPage] = useState('imagenes');
     const [items, setItems] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
+    
+    // Pagination State
+    const [lastDoc, setLastDoc] = useState(null);
+    const [hasMore, setHasMore] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const ITEMS_PER_PAGE = 12;
 
-    // 1. Detect page from HTML data-attribute
     useEffect(() => {
         const rootEl = document.getElementById('root');
         const pageAttr = rootEl ? rootEl.getAttribute('data-page') : 'imagenes';
         setPage(pageAttr);
     }, []);
 
-    // 2. Fetch Content based on Page
+    // Initial Load Logic with Pagination Support
     useEffect(() => {
         if (['generador', 'sobre-mi', 'contacto'].includes(page)) {
             setLoading(false);
             return;
         }
 
-        const fetchContent = async () => {
+        const fetchInitialContent = async () => {
             setLoading(true);
+            setItems([]);
+            setLastDoc(null);
+            setHasMore(true);
+
             if (!db) { setLoading(false); return; }
+            
             try {
                 let queries = [];
-                
                 if (page === 'recursos') {
-                    queries.push(query(collection(db, "content"), where("category", "==", "recomendaciones"), orderBy("createdAt", "desc")));
-                    queries.push(query(collection(db, "content"), where("category", "==", "afiliados"), orderBy("createdAt", "desc")));
+                    // For simplicity in multi-collection, we fetch more or all, or stick to one main query logic
+                    // Since Firebase pagination across two different queries is complex, we load a larger batch for resources
+                    // or just standard logic if possible. Let's stick to standard queries for main galleries.
+                    // If 'recursos' combines two categories, we'll just fetch 20 of each to keep it simple and "optimized" enough
+                    const q1 = query(collection(db, "content"), where("category", "==", "recomendaciones"), orderBy("createdAt", "desc"), limit(20));
+                    const q2 = query(collection(db, "content"), where("category", "==", "afiliados"), orderBy("createdAt", "desc"), limit(20));
+                    const [s1, s2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+                    const docs = [...s1.docs, ...s2.docs].map(d => ({ id: d.id, ...d.data() }));
+                    docs.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+                    setItems(docs);
+                    setHasMore(false); // Disable load more for mixed resources for now
                 } else {
-                    queries.push(query(collection(db, "content"), where("category", "==", page), orderBy("createdAt", "desc")));
+                    const q = query(
+                        collection(db, "content"), 
+                        where("category", "==", page), 
+                        orderBy("createdAt", "desc"), 
+                        limit(ITEMS_PER_PAGE)
+                    );
+                    const snapshot = await getDocs(q);
+                    const newItems = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                    
+                    setItems(newItems);
+                    setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
+                    setHasMore(snapshot.docs.length === ITEMS_PER_PAGE);
                 }
-
-                const results = await Promise.all(queries.map(q => getDocs(q)));
-                const allDocs = results.flatMap(snap => snap.docs.map(d => ({ id: d.id, ...d.data() })));
-                
-                allDocs.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-                
-                setItems(allDocs);
             } catch (e) {
                 console.error("Error fetching:", e);
             } finally {
                 setLoading(false);
             }
         };
-        fetchContent();
+        
+        fetchInitialContent();
     }, [page]);
 
-    // 3. Filter
+    const handleLoadMore = async () => {
+        if (!hasMore || loadingMore || !lastDoc || ['generador', 'sobre-mi', 'contacto', 'recursos'].includes(page)) return;
+        
+        setLoadingMore(true);
+        try {
+            const q = query(
+                collection(db, "content"), 
+                where("category", "==", page), 
+                orderBy("createdAt", "desc"), 
+                startAfter(lastDoc),
+                limit(ITEMS_PER_PAGE)
+            );
+            
+            const snapshot = await getDocs(q);
+            const newItems = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            
+            if (newItems.length > 0) {
+                setItems(prev => [...prev, ...newItems]);
+                setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
+                setHasMore(newItems.length === ITEMS_PER_PAGE);
+            } else {
+                setHasMore(false);
+            }
+        } catch (error) {
+            console.error("Error loading more:", error);
+        } finally {
+            setLoadingMore(false);
+        }
+    };
+
     const filteredItems = items.filter(item => {
         if (!searchTerm) return true;
         const term = searchTerm.toLowerCase();
@@ -514,9 +590,8 @@ const App = () => {
                (item.description && item.description.toLowerCase().includes(term));
     });
 
-    // 4. Render Content Switcher
     const renderContent = () => {
-        if (loading) return React.createElement('div', {className: 'loading-container'}, React.createElement('div', {className: 'loading-spinner'}), React.createElement('p', {}, 'Cargando...'));
+        if (loading) return React.createElement('div', {className: 'loading-container'}, React.createElement('div', {className: 'loading-spinner'}), React.createElement('p', {}, 'Cargando contenido...'));
         
         if (page === 'generador') return React.createElement(GeneratorPage);
         if (page === 'sobre-mi') return React.createElement(AboutMe);
@@ -524,19 +599,28 @@ const App = () => {
 
         if (filteredItems.length === 0) return React.createElement('div', {className: 'empty-state-container'}, 'No se encontró contenido.');
 
-        return React.createElement('div', {className: 'content-grid'}, filteredItems.map(item => {
-            if (page === 'imagenes' || page === 'videos') return React.createElement(ImagePromptCard, {key: item.id, item, onShowDetails: setSelectedItem});
-            if (page === 'descargas') return React.createElement(DownloadCard, {key: item.id, item, onShowDetails: setSelectedItem});
-            if (page === 'tutoriales') return React.createElement(TutorialCard, {key: item.id, item, onShowDetails: setSelectedItem});
-            if (page === 'recursos') {
-                if (item.category === 'afiliados') return React.createElement(AffiliateCard, {key: item.id, item, onShowDetails: setSelectedItem});
-                return React.createElement(RecommendationCard, {key: item.id, item, onShowDetails: setSelectedItem});
-            }
-            return null;
-        }));
+        return React.createElement('div', {}, [
+            React.createElement('div', {className: 'content-grid'}, filteredItems.map(item => {
+                if (page === 'imagenes' || page === 'videos') return React.createElement(ImagePromptCard, {key: item.id, item, onShowDetails: setSelectedItem});
+                if (page === 'descargas') return React.createElement(DownloadCard, {key: item.id, item, onShowDetails: setSelectedItem});
+                if (page === 'tutoriales') return React.createElement(TutorialCard, {key: item.id, item, onShowDetails: setSelectedItem});
+                if (page === 'recursos') {
+                    if (item.category === 'afiliados') return React.createElement(AffiliateCard, {key: item.id, item, onShowDetails: setSelectedItem});
+                    return React.createElement(RecommendationCard, {key: item.id, item, onShowDetails: setSelectedItem});
+                }
+                return null;
+            })),
+            // Load More Button for optimized loading
+            hasMore && !searchTerm && React.createElement('div', { className: 'load-more-container' }, 
+                React.createElement('button', { 
+                    className: 'load-more-button', 
+                    onClick: handleLoadMore,
+                    disabled: loadingMore
+                }, loadingMore ? 'Cargando...' : 'Cargar más')
+            )
+        ]);
     };
 
-    // Navigation Links Config
     const navLinks = [
         {id: 'imagenes', label: 'Imágenes', link: './'},
         {id: 'videos', label: 'Videos', link: 'videos.html'},
@@ -566,6 +650,8 @@ const App = () => {
         ),
 
         React.createElement('div', { key: 'main', style: { marginTop: '2rem' } }, renderContent()),
+
+        React.createElement(Footer, { key: 'footer' }),
 
         selectedItem && React.createElement(DetailModal, { item: selectedItem, onClose: () => setSelectedItem(null) })
     ]);
