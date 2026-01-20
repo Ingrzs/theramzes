@@ -221,7 +221,7 @@ const ContactForm = () => {
 };
 
 // --- Extract TweetCardUI Component to fix Focus Issues ---
-// This MUST be outside GeneratorPage to prevent re-mounting on every keystroke
+// Updated to support Verification Badges and Platform-specific layouts
 const TweetCardUI = ({ 
     txt, 
     isEditable = false, 
@@ -233,9 +233,32 @@ const TweetCardUI = ({
     setName, 
     username, 
     setUsername, 
-    onAvatarClick 
-}) => (
-    React.createElement('div', { 
+    onAvatarClick,
+    verificationType = 'none' // 'none', 'tw', 'fb'
+}) => {
+    const isDark = theme === 'dark';
+    const twBadge = "https://i.ibb.co/Gv7hRLfZ/twitter.jpg";
+    const fbBadge = "https://i.ibb.co/Xx8B1kBg/Gemini-Generated-Image-hzflazhzflazhzfl.png";
+
+    const badgeStyle = {
+        width: '18px',
+        height: '18px',
+        marginLeft: '4px',
+        verticalAlign: 'middle',
+        borderRadius: '50%',
+        display: 'inline-block'
+    };
+
+    const fbMetaStyle = {
+        fontSize: '0.8rem',
+        color: isDark ? '#a0a0a0' : '#65676b',
+        marginTop: '2px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '4px'
+    };
+
+    return React.createElement('div', { 
         className: `tweet-card ${theme} ${font} ${align} ${!isEditable ? 'tweet-card-batch' : ''}`,
         style: !isEditable ? { marginBottom: '20px' } : {} 
     }, [
@@ -247,29 +270,80 @@ const TweetCardUI = ({
                 onClick: isEditable ? onAvatarClick : undefined 
             }),
             React.createElement('div', { key: 'info', className: 'tweet-user-info text-left' }, [
-                isEditable 
-                ? React.createElement('input', { 
-                    key: 'name-in', 
-                    className: 'editable-input tweet-name', 
-                    value: name, 
-                    onChange: e => setName(e.target.value), 
-                    placeholder: "Nombre" 
-                })
-                : React.createElement('div', { key: 'name', className: 'tweet-name' }, name),
-                isEditable
-                ? React.createElement('input', { 
-                    key: 'user-in', 
-                    className: 'editable-input tweet-username', 
-                    value: username, 
-                    onChange: e => setUsername(e.target.value), 
-                    placeholder: "@usuario" 
-                })
-                : React.createElement('div', { key: 'user', className: 'tweet-username' }, username)
+                // Fila de Nombre + Badge
+                React.createElement('div', { key: 'name-row', style: { display: 'flex', alignItems: 'center', flexWrap: 'nowrap' } }, [
+                    isEditable 
+                    ? React.createElement('input', { 
+                        key: 'name-in', 
+                        className: 'editable-input tweet-name', 
+                        style: { width: 'auto', flexShrink: 1 },
+                        value: name, 
+                        onChange: e => setName(e.target.value), 
+                        placeholder: "Nombre" 
+                    })
+                    : React.createElement('div', { key: 'name', className: 'tweet-name' }, name),
+                    
+                    // Mostrar badge si es TW o FB
+                    verificationType !== 'none' && React.createElement('img', { 
+                        key: 'badge', 
+                        src: verificationType === 'tw' ? twBadge : fbBadge,
+                        style: badgeStyle,
+                        alt: 'verificado'
+                    }),
+
+                    // TW Layout: @usuario va en la misma fila para TW si se desea, pero el usuario pidió: 
+                    // TW: Nombre de usuario -> Ícono de verificación -> @usuario (todo en línea o estilo twitter)
+                    // Para que se vea como la imagen 2 de TW:
+                    verificationType === 'tw' && React.createElement('div', { 
+                        key: 'tw-at', 
+                        className: 'tweet-username', 
+                        style: { marginLeft: '6px', fontSize: '0.9rem', whiteSpace: 'nowrap' } 
+                    }, [
+                        isEditable 
+                        ? React.createElement('input', { 
+                            key: 'at-in', 
+                            className: 'editable-input', 
+                            style: { width: '80px' },
+                            value: username, 
+                            onChange: e => setUsername(e.target.value), 
+                            placeholder: "@usuario" 
+                        })
+                        : username,
+                        React.createElement('span', { key: 'dot', style: { margin: '0 4px' } }, '·'),
+                        React.createElement('span', { key: 'time' }, '5h')
+                    ])
+                ]),
+                
+                // FB Meta Layout: 21 min · Globe
+                verificationType === 'fb' && React.createElement('div', { key: 'fb-meta', style: fbMetaStyle }, [
+                    React.createElement('span', { key: 't' }, '21 min'),
+                    React.createElement('span', { key: 'd' }, '·'),
+                    React.createElement('svg', { 
+                        key: 'g', 
+                        viewBox: '0 0 16 16', 
+                        width: '12', 
+                        height: '12', 
+                        fill: 'currentColor' 
+                    }, React.createElement('path', { d: 'M8 0a8 8 0 100 16A8 8 0 008 0zM2.04 4.326c.325 1.329 2.532 2.54 3.71 2.54.147 0 .294-.012.44-.025a1.549 1.549 0 011.05-.14 1.499 1.499 0 01.95.703c.163.288.161.597.019.892-.037.078-.08.153-.125.225-.147.231-.342.39-.582.458l-.05.013c-.168.037-.333.051-.493.039a4.106 4.106 0 01-.827-.13l-.064-.019c-.421-.125-.75-.382-.954-.772a.499.499 0 00-.469-.257.5.5 0 00-.45.316c-.338.869-.66 1.595-.909 1.929-.143.194-.485.373-.72.373-.584 0-1.109-.313-1.404-.783-.277-.447-.439-1.125-.439-1.89 0-1.457.746-2.738 1.867-3.483zM8 15c-1.454 0-2.798-.412-3.93-1.121.267-.482.699-.956 1.246-.956.143 0 .293.01.443.024.58.051 1.038-.096 1.388-.441.327-.322.512-.749.546-1.245l.007-.068c.032-.338.01-.683-.07-1.03l-.013-.056a1.991 1.991 0 01.125-1.488c.282-.542.721-.971 1.235-1.207.14-.065.29-.12.44-.165.772-.243 1.537-.088 2.126.37.159.121.324.227.494.316.542.283 1.157.34 1.767.14.069-.022.14-.048.206-.078.298-.135.547-.354.74-.635.161-.233.301-.512.42-.835A6.957 6.957 0 0115 8c0 3.86-3.14 7-7 7z' }))
+                ]),
+
+                // Si no es FB ni TW verificado, mostrar el username normal abajo (estilo original)
+                verificationType === 'none' && (
+                    isEditable 
+                    ? React.createElement('input', { 
+                        key: 'user-in', 
+                        className: 'editable-input tweet-username', 
+                        value: username, 
+                        onChange: e => setUsername(e.target.value), 
+                        placeholder: "@usuario" 
+                    })
+                    : React.createElement('div', { key: 'user', className: 'tweet-username' }, username)
+                )
             ])
         ]),
         React.createElement('div', { key: 'body', className: 'tweet-body' }, txt)
     ])
-);
+};
 
 // --- Generator Page Component ---
 const GeneratorPage = () => {
@@ -290,6 +364,7 @@ const GeneratorPage = () => {
     const [font, setFont] = useState('font-inter'); 
     const [align, setAlign] = useState('text-left');
     const [theme, setTheme] = useState('dark'); 
+    const [verificationType, setVerificationType] = useState('none'); // 'none', 'tw', 'fb'
     
     const [inputText, setInputText] = useState('Haz clic en el nombre o foto para editar.\nEscribe aquí tu frase.\nUsa "Enter" para crear nuevas imágenes.');
 
@@ -302,10 +377,7 @@ const GeneratorPage = () => {
     // --- Smart Text Cleaning Helper ---
     const cleanLineText = (text) => {
         let cleaned = text.trim();
-        // Eliminar numeración inicial como "1.", "1-", "1)", "1.-"
         cleaned = cleaned.replace(/^\d+\s*[\.\-\)]+\s*/, '');
-        
-        // Eliminar comillas envolventes si existen al inicio y final
         if (cleaned.length > 1 && cleaned.startsWith('"') && cleaned.endsWith('"')) {
             cleaned = cleaned.substring(1, cleaned.length - 1);
         }
@@ -331,7 +403,6 @@ const GeneratorPage = () => {
     };
 
     const handleGenerate = async () => {
-        // Dividir, limpiar, filtrar vacíos y limitar a 5
         const lines = inputText.split('\n')
             .map(l => cleanLineText(l))
             .filter(l => l.length > 0)
@@ -371,6 +442,14 @@ const GeneratorPage = () => {
         } else { alert("Permite las ventanas emergentes."); }
     };
 
+    const handleVerificationChange = (type) => {
+        if (verificationType === type) {
+            setVerificationType('none');
+        } else {
+            setVerificationType(type);
+        }
+    };
+
     const optionStyle = { backgroundColor: '#1e1e1e', color: '#e0e0e0' };
 
     return React.createElement('div', { className: 'generator-container' }, [
@@ -383,7 +462,8 @@ const GeneratorPage = () => {
                  key: 'live', 
                  txt: inputText.split('\n')[0] || 'Escribe algo...', 
                  isEditable: true,
-                 theme, font, align, avatarUrl, name, setName, username, setUsername, onAvatarClick: handleAvatarClick
+                 theme, font, align, avatarUrl, name, setName, username, setUsername, onAvatarClick: handleAvatarClick,
+                 verificationType
              })
         ]),
 
@@ -425,6 +505,22 @@ const GeneratorPage = () => {
                         React.createElement('button', { className: `control-btn ${theme === 'dark' ? 'active' : ''}`, onClick: () => setTheme('dark') }, 'Oscuro'),
                         React.createElement('button', { className: `control-btn ${theme === 'light' ? 'active' : ''}`, onClick: () => setTheme('light') }, 'Claro'),
                     ])
+                ]),
+                // NUEVA SECCIÓN: Verificación FB / TW
+                React.createElement('div', { className: 'control-group' }, [
+                    React.createElement('label', {}, 'Verificación'),
+                    React.createElement('div', { className: 'control-btn-group' }, [
+                        React.createElement('button', { 
+                            className: `control-btn ${verificationType === 'fb' ? 'active' : ''}`, 
+                            onClick: () => handleVerificationChange('fb'),
+                            title: 'Facebook Verification'
+                        }, 'FB'),
+                        React.createElement('button', { 
+                            className: `control-btn ${verificationType === 'tw' ? 'active' : ''}`, 
+                            onClick: () => handleVerificationChange('tw'),
+                            title: 'Twitter Verification'
+                        }, 'TW'),
+                    ])
                 ])
             ]),
             React.createElement('div', { key: 'row2', className: 'control-group' }, [
@@ -462,7 +558,8 @@ const GeneratorPage = () => {
                 key: idx, 
                 txt: line, 
                 isEditable: false,
-                theme, font, align, avatarUrl, name, username 
+                theme, font, align, avatarUrl, name, username,
+                verificationType
             })
         ))
     ]);
@@ -507,17 +604,13 @@ const App = () => {
             try {
                 let queries = [];
                 if (page === 'recursos') {
-                    // For simplicity in multi-collection, we fetch more or all, or stick to one main query logic
-                    // Since Firebase pagination across two different queries is complex, we load a larger batch for resources
-                    // or just standard logic if possible. Let's stick to standard queries for main galleries.
-                    // If 'recursos' combines two categories, we'll just fetch 20 of each to keep it simple and "optimized" enough
                     const q1 = query(collection(db, "content"), where("category", "==", "recomendaciones"), orderBy("createdAt", "desc"), limit(20));
                     const q2 = query(collection(db, "content"), where("category", "==", "afiliados"), orderBy("createdAt", "desc"), limit(20));
                     const [s1, s2] = await Promise.all([getDocs(q1), getDocs(q2)]);
                     const docs = [...s1.docs, ...s2.docs].map(d => ({ id: d.id, ...d.data() }));
                     docs.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
                     setItems(docs);
-                    setHasMore(false); // Disable load more for mixed resources for now
+                    setHasMore(false);
                 } else {
                     const q = query(
                         collection(db, "content"), 
@@ -621,7 +714,6 @@ const App = () => {
                 }
                 return null;
             })),
-            // Infinite Scroll Sentinel
             hasMore && !searchTerm && React.createElement('div', { 
                 ref: loaderRef, 
                 className: 'loading-sentinel',
