@@ -222,23 +222,23 @@ const ContactForm = () => {
 
 /**
  * AutosizeInput Component
- * Implementación de ancho dinámico real (Auto-width).
- * El input colapsa o se expande milimétricamente según el texto escrito.
+ * Implementación de auto-width real.
+ * El componente colapsa o se expande milimétricamente según el texto escrito
+ * mediante un span invisible que actúa como guía de tamaño para el grid.
  */
 const AutosizeInput = ({ value, onChange, className, style, placeholder, isEditable }) => {
     if (!isEditable) return React.createElement('div', { className, style }, value);
 
-    // El span mide el ancho real del texto. No incluimos placeholder para que colapse a 0 si está vacío.
+    // El span mide el ancho real. Si el texto está vacío, usamos una cadena vacía para que mida 0.
     const measureValue = value || "";
 
     return React.createElement('div', {
-        className: 'autosize-input-wrapper',
         style: {
             display: 'inline-grid',
             verticalAlign: 'middle',
             alignItems: 'center',
-            width: 'fit-content', // Esto asegura que el contenedor no tenga ancho sobrante
-            gridTemplateColumns: 'minmax(0, 1fr)'
+            width: 'fit-content', // Esto es vital para que colapse
+            justifyContent: 'start'
         }
     }, [
         React.createElement('span', {
@@ -257,7 +257,7 @@ const AutosizeInput = ({ value, onChange, className, style, placeholder, isEdita
                 fontWeight: 'inherit',
                 letterSpacing: 'inherit',
                 lineHeight: 'inherit',
-                minWidth: '1px' // Un pequeño margen para el cursor
+                minWidth: '0px'
             }
         }, measureValue),
         React.createElement('input', {
@@ -288,8 +288,8 @@ const AutosizeInput = ({ value, onChange, className, style, placeholder, isEdita
 
 /**
  * TweetCardUI Component
- * Alineación dinámica total. Se eliminó flex-grow para que los elementos se 
- * mantengan agrupados y pegados unos a otros.
+ * Alineación dinámica total. El ícono de verificación está pegado al nombre
+ * gracias a que row-primary es un flex-container de ancho fit-content.
  */
 const TweetCardUI = ({ 
     txt, 
@@ -319,7 +319,7 @@ const TweetCardUI = ({
         flexShrink: 0
     };
 
-    const headerAlignStyle = {
+    const headerContainerStyle = {
         display: 'flex',
         alignItems: 'center',
         justifyContent: align.includes('center') ? 'center' : (align.includes('right') ? 'flex-end' : 'flex-start'),
@@ -331,7 +331,7 @@ const TweetCardUI = ({
         className: `tweet-card ${theme} ${font} ${align} ${!isEditable ? 'tweet-card-batch' : ''}`,
         style: !isEditable ? { marginBottom: '20px' } : {} 
     }, [
-        React.createElement('div', { key: 'header', style: headerAlignStyle }, [
+        React.createElement('div', { key: 'header', style: headerContainerStyle }, [
             React.createElement('img', { 
                 key: 'avatar', 
                 src: avatarUrl, 
@@ -345,13 +345,12 @@ const TweetCardUI = ({
                     display: 'flex', 
                     flexDirection: 'column', 
                     alignItems: align.includes('center') ? 'center' : (align.includes('right') ? 'flex-end' : 'flex-start'),
-                    width: 'auto', // Forzar ancho dinámico
-                    flexGrow: 0,   // IMPORTANTE: Elimina el comportamiento de estiramiento
-                    flexShrink: 1,
-                    minWidth: 0
+                    width: 'fit-content', // Obligatorio para que no crezca más que el texto
+                    flexGrow: 0,
+                    flexShrink: 0
                 } 
             }, [
-                // Fila Unificada: [Nombre] [Verificación] [@Usuario (si es TW)]
+                // Fila principal: [Nombre] [Verificación] [@User si es TW]
                 React.createElement('div', { 
                     key: 'row-primary', 
                     style: { display: 'flex', alignItems: 'center', flexWrap: 'nowrap', width: 'fit-content' } 
@@ -372,7 +371,7 @@ const TweetCardUI = ({
                         alt: 'verificado'
                     }),
 
-                    // TW: @usuario va pegado en la misma fila
+                    // Twitter: handle pegado al nombre
                     verificationType === 'tw' && React.createElement(AutosizeInput, {
                         key: 'at-field',
                         value: username,
@@ -383,7 +382,7 @@ const TweetCardUI = ({
                     })
                 ]),
 
-                // Si no hay plataforma o es modo libre, el @usuario va debajo
+                // Handle abajo si no hay plataforma específica
                 verificationType === 'none' && React.createElement(AutosizeInput, {
                     key: 'at-standard',
                     value: username,
