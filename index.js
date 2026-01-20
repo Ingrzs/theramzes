@@ -220,7 +220,7 @@ const ContactForm = () => {
     ]);
 };
 
-// --- Helper for Autosizing Inputs ---
+// --- Helper for Autosizing Inputs (Ultra Tight) ---
 const AutosizeInput = ({ value, onChange, className, style, placeholder, isEditable }) => {
     if (!isEditable) return React.createElement('div', { className, style }, value);
 
@@ -233,12 +233,17 @@ const AutosizeInput = ({ value, onChange, className, style, placeholder, isEdita
     }, [
         React.createElement('span', {
             key: 'measure',
+            className: className, // Herencia crucial de negrita/fuente
             style: {
                 ...style,
                 gridArea: '1/1',
                 visibility: 'hidden',
                 whiteSpace: 'pre',
-                padding: '0'
+                padding: '0',
+                border: 'none',
+                fontFamily: 'inherit',
+                fontSize: 'inherit',
+                fontWeight: 'inherit'
             }
         }, value || placeholder),
         React.createElement('input', {
@@ -254,7 +259,10 @@ const AutosizeInput = ({ value, onChange, className, style, placeholder, isEdita
                 background: 'transparent',
                 border: 'none',
                 padding: '0',
-                outline: 'none'
+                outline: 'none',
+                fontFamily: 'inherit',
+                fontSize: 'inherit',
+                fontWeight: 'inherit'
             }
         })
     ]);
@@ -282,7 +290,7 @@ const TweetCardUI = ({
         width: '18px',
         height: '18px',
         marginLeft: '4px',
-        marginRight: verificationType === 'tw' ? '6px' : '0',
+        marginRight: (verificationType === 'tw' && isEditable) ? '6px' : (verificationType === 'tw' ? '4px' : '0'),
         verticalAlign: 'middle',
         borderRadius: '50%',
         display: 'inline-block',
@@ -307,9 +315,10 @@ const TweetCardUI = ({
                 className: 'tweet-avatar', 
                 onClick: isEditable ? onAvatarClick : undefined 
             }),
-            React.createElement('div', { key: 'info', className: 'tweet-user-info' }, [
-                // Layout for Name + Verification + (Twitter @handle)
-                React.createElement('div', { key: 'row-primary', style: { display: 'flex', alignItems: 'center', flexWrap: 'nowrap' } }, [
+            React.createElement('div', { key: 'info', className: 'tweet-user-info', style: { display: 'flex', flexDirection: 'column', alignItems: 'flex-start' } }, [
+                
+                // Twitter Layout: [Nombre] [Badge] [@usuario] (Todo en la misma línea)
+                verificationType === 'tw' ? React.createElement('div', { key: 'row-tw', style: { display: 'flex', alignItems: 'center', flexWrap: 'nowrap' } }, [
                     React.createElement(AutosizeInput, {
                         key: 'name-field',
                         value: name,
@@ -318,15 +327,13 @@ const TweetCardUI = ({
                         placeholder: 'Nombre',
                         isEditable
                     }),
-                    
-                    verificationType !== 'none' && React.createElement('img', { 
+                    React.createElement('img', { 
                         key: 'badge-img', 
-                        src: verificationType === 'tw' ? twBadge : fbBadge,
+                        src: twBadge,
                         style: badgeStyle,
                         alt: 'verificado'
                     }),
-
-                    verificationType === 'tw' && React.createElement(AutosizeInput, {
+                    React.createElement(AutosizeInput, {
                         key: 'at-field',
                         value: username,
                         onChange: isEditable ? e => setUsername(e.target.value) : undefined,
@@ -334,9 +341,26 @@ const TweetCardUI = ({
                         placeholder: '@usuario',
                         isEditable
                     })
+                ]) : 
+                // Facebook / Normal Layout: [Nombre] [Badge]
+                React.createElement('div', { key: 'row-fb', style: { display: 'flex', alignItems: 'center', flexWrap: 'nowrap' } }, [
+                    React.createElement(AutosizeInput, {
+                        key: 'name-field',
+                        value: name,
+                        onChange: isEditable ? e => setName(e.target.value) : undefined,
+                        className: 'tweet-name',
+                        placeholder: 'Nombre',
+                        isEditable
+                    }),
+                    verificationType === 'fb' && React.createElement('img', { 
+                        key: 'badge-img', 
+                        src: fbBadge,
+                        style: badgeStyle,
+                        alt: 'verificado'
+                    })
                 ]),
 
-                // Case for Standard Layout (No FB/TW active)
+                // Si no hay plataforma activa, el @usuario va abajo (Estilo original)
                 verificationType === 'none' && React.createElement(AutosizeInput, {
                     key: 'at-standard',
                     value: username,
@@ -758,7 +782,7 @@ const App = () => {
 
         React.createElement(Footer, { key: 'footer' }),
 
-        selectedItem && React.createElement(DetailModal, { item: selectedItem, onClose: () => setSelectedItem(null) })
+        selectedItem && React.createElement(DetailModal, { item: setSelectedItem, onClose: () => setSelectedItem(null) })
     ]);
 };
 
