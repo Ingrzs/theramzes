@@ -220,20 +220,25 @@ const ContactForm = () => {
     ]);
 };
 
-// --- Helper for Autosizing Inputs (Ultra Tight) ---
+// --- Helper for Dynamic Autosizing Inputs (Fixed Alignment) ---
 const AutosizeInput = ({ value, onChange, className, style, placeholder, isEditable }) => {
     if (!isEditable) return React.createElement('div', { className, style }, value);
+
+    // Si el valor está vacío, el medidor span también debe estarlo (o casi) 
+    // para que el ícono se pegue al elemento anterior.
+    const displayValue = value === "" ? "" : value;
 
     return React.createElement('div', {
         style: {
             display: 'inline-grid',
             verticalAlign: 'middle',
-            alignItems: 'center'
+            alignItems: 'center',
+            width: 'fit-content' // Crucial: no debe expandirse más de lo necesario
         }
     }, [
         React.createElement('span', {
             key: 'measure',
-            className: className, // Herencia crucial de negrita/fuente
+            className: className,
             style: {
                 ...style,
                 gridArea: '1/1',
@@ -243,9 +248,10 @@ const AutosizeInput = ({ value, onChange, className, style, placeholder, isEdita
                 border: 'none',
                 fontFamily: 'inherit',
                 fontSize: 'inherit',
-                fontWeight: 'inherit'
+                fontWeight: 'inherit',
+                minWidth: '2px' // Mínimo para que el cursor sea visible
             }
-        }, value || placeholder),
+        }, displayValue || placeholder),
         React.createElement('input', {
             key: 'input',
             className: `${className} editable-input`,
@@ -268,7 +274,7 @@ const AutosizeInput = ({ value, onChange, className, style, placeholder, isEdita
     ]);
 };
 
-// --- Updated TweetCardUI Component ---
+// --- Updated TweetCardUI Component (Compact Header) ---
 const TweetCardUI = ({ 
     txt, 
     isEditable = false, 
@@ -289,8 +295,8 @@ const TweetCardUI = ({
     const badgeStyle = {
         width: '18px',
         height: '18px',
-        marginLeft: '4px',
-        marginRight: (verificationType === 'tw' && isEditable) ? '6px' : (verificationType === 'tw' ? '4px' : '0'),
+        marginLeft: '2px', // Alineación pegada solicitada
+        marginRight: verificationType === 'tw' ? '4px' : '0',
         verticalAlign: 'middle',
         borderRadius: '50%',
         display: 'inline-block',
@@ -315,10 +321,22 @@ const TweetCardUI = ({
                 className: 'tweet-avatar', 
                 onClick: isEditable ? onAvatarClick : undefined 
             }),
-            React.createElement('div', { key: 'info', className: 'tweet-user-info', style: { display: 'flex', flexDirection: 'column', alignItems: 'flex-start' } }, [
+            React.createElement('div', { 
+                key: 'info', 
+                className: 'tweet-user-info', 
+                style: { 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    alignItems: align.includes('center') ? 'center' : (align.includes('right') ? 'flex-end' : 'flex-start'),
+                    flexGrow: 0 // No dejar que este contenedor ocupe todo el espacio
+                } 
+            }, [
                 
-                // Twitter Layout: [Nombre] [Badge] [@usuario] (Todo en la misma línea)
-                verificationType === 'tw' ? React.createElement('div', { key: 'row-tw', style: { display: 'flex', alignItems: 'center', flexWrap: 'nowrap' } }, [
+                // Twitter/FB Header Row: [Nombre] [Badge] [@User] (Todo en una fila compacta)
+                React.createElement('div', { 
+                    key: 'primary-row', 
+                    style: { display: 'flex', alignItems: 'center', flexWrap: 'nowrap', width: 'fit-content' } 
+                }, [
                     React.createElement(AutosizeInput, {
                         key: 'name-field',
                         value: name,
@@ -327,13 +345,16 @@ const TweetCardUI = ({
                         placeholder: 'Nombre',
                         isEditable
                     }),
-                    React.createElement('img', { 
+                    
+                    verificationType !== 'none' && React.createElement('img', { 
                         key: 'badge-img', 
-                        src: twBadge,
+                        src: verificationType === 'tw' ? twBadge : fbBadge,
                         style: badgeStyle,
                         alt: 'verificado'
                     }),
-                    React.createElement(AutosizeInput, {
+
+                    // TW Layout: @usuario va en la misma línea
+                    verificationType === 'tw' && React.createElement(AutosizeInput, {
                         key: 'at-field',
                         value: username,
                         onChange: isEditable ? e => setUsername(e.target.value) : undefined,
@@ -341,26 +362,9 @@ const TweetCardUI = ({
                         placeholder: '@usuario',
                         isEditable
                     })
-                ]) : 
-                // Facebook / Normal Layout: [Nombre] [Badge]
-                React.createElement('div', { key: 'row-fb', style: { display: 'flex', alignItems: 'center', flexWrap: 'nowrap' } }, [
-                    React.createElement(AutosizeInput, {
-                        key: 'name-field',
-                        value: name,
-                        onChange: isEditable ? e => setName(e.target.value) : undefined,
-                        className: 'tweet-name',
-                        placeholder: 'Nombre',
-                        isEditable
-                    }),
-                    verificationType === 'fb' && React.createElement('img', { 
-                        key: 'badge-img', 
-                        src: fbBadge,
-                        style: badgeStyle,
-                        alt: 'verificado'
-                    })
                 ]),
 
-                // Si no hay plataforma activa, el @usuario va abajo (Estilo original)
+                // Si no hay plataforma activa (FB/TW), el @usuario se mantiene abajo como antes
                 verificationType === 'none' && React.createElement(AutosizeInput, {
                     key: 'at-standard',
                     value: username,
