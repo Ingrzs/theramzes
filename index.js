@@ -220,8 +220,7 @@ const ContactForm = () => {
     ]);
 };
 
-// --- Extract TweetCardUI Component to fix Focus Issues ---
-// Updated to support Verification Badges and Platform-specific layouts
+// --- Extract TweetCardUI Component ---
 const TweetCardUI = ({ 
     txt, 
     isEditable = false, 
@@ -246,16 +245,8 @@ const TweetCardUI = ({
         marginLeft: '4px',
         verticalAlign: 'middle',
         borderRadius: '50%',
-        display: 'inline-block'
-    };
-
-    const fbMetaStyle = {
-        fontSize: '0.8rem',
-        color: isDark ? '#a0a0a0' : '#65676b',
-        marginTop: '2px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '4px'
+        display: 'inline-block',
+        flexShrink: 0
     };
 
     return React.createElement('div', { 
@@ -270,13 +261,14 @@ const TweetCardUI = ({
                 onClick: isEditable ? onAvatarClick : undefined 
             }),
             React.createElement('div', { key: 'info', className: 'tweet-user-info text-left' }, [
-                // Fila de Nombre + Badge
-                React.createElement('div', { key: 'name-row', style: { display: 'flex', alignItems: 'center', flexWrap: 'nowrap' } }, [
+                // Fila de Nombre + Badge + (opcional) @usuario para TW
+                React.createElement('div', { key: 'name-row', style: { display: 'flex', alignItems: 'center', flexWrap: 'nowrap', gap: '2px' } }, [
                     isEditable 
                     ? React.createElement('input', { 
                         key: 'name-in', 
                         className: 'editable-input tweet-name', 
-                        style: { width: 'auto', flexShrink: 1 },
+                        style: { width: 'fit-content', minWidth: '10px' },
+                        size: name.length || 1,
                         value: name, 
                         onChange: e => setName(e.target.value), 
                         placeholder: "Nombre" 
@@ -291,42 +283,26 @@ const TweetCardUI = ({
                         alt: 'verificado'
                     }),
 
-                    // TW Layout: @usuario va en la misma fila para TW si se desea, pero el usuario pidió: 
-                    // TW: Nombre de usuario -> Ícono de verificación -> @usuario (todo en línea o estilo twitter)
-                    // Para que se vea como la imagen 2 de TW:
+                    // TW Layout: @usuario pegado al badge
                     verificationType === 'tw' && React.createElement('div', { 
                         key: 'tw-at', 
                         className: 'tweet-username', 
-                        style: { marginLeft: '6px', fontSize: '0.9rem', whiteSpace: 'nowrap' } 
+                        style: { marginLeft: '6px', fontSize: '0.9rem', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center' } 
                     }, [
                         isEditable 
                         ? React.createElement('input', { 
                             key: 'at-in', 
                             className: 'editable-input', 
-                            style: { width: '80px' },
+                            style: { width: 'fit-content', minWidth: '10px' },
+                            size: username.length || 1,
                             value: username, 
                             onChange: e => setUsername(e.target.value), 
                             placeholder: "@usuario" 
                         })
-                        : username,
-                        React.createElement('span', { key: 'dot', style: { margin: '0 4px' } }, '·'),
-                        React.createElement('span', { key: 'time' }, '5h')
+                        : username
                     ])
                 ]),
                 
-                // FB Meta Layout: 21 min · Globe
-                verificationType === 'fb' && React.createElement('div', { key: 'fb-meta', style: fbMetaStyle }, [
-                    React.createElement('span', { key: 't' }, '21 min'),
-                    React.createElement('span', { key: 'd' }, '·'),
-                    React.createElement('svg', { 
-                        key: 'g', 
-                        viewBox: '0 0 16 16', 
-                        width: '12', 
-                        height: '12', 
-                        fill: 'currentColor' 
-                    }, React.createElement('path', { d: 'M8 0a8 8 0 100 16A8 8 0 008 0zM2.04 4.326c.325 1.329 2.532 2.54 3.71 2.54.147 0 .294-.012.44-.025a1.549 1.549 0 011.05-.14 1.499 1.499 0 01.95.703c.163.288.161.597.019.892-.037.078-.08.153-.125.225-.147.231-.342.39-.582.458l-.05.013c-.168.037-.333.051-.493.039a4.106 4.106 0 01-.827-.13l-.064-.019c-.421-.125-.75-.382-.954-.772a.499.499 0 00-.469-.257.5.5 0 00-.45.316c-.338.869-.66 1.595-.909 1.929-.143.194-.485.373-.72.373-.584 0-1.109-.313-1.404-.783-.277-.447-.439-1.125-.439-1.89 0-1.457.746-2.738 1.867-3.483zM8 15c-1.454 0-2.798-.412-3.93-1.121.267-.482.699-.956 1.246-.956.143 0 .293.01.443.024.58.051 1.038-.096 1.388-.441.327-.322.512-.749.546-1.245l.007-.068c.032-.338.01-.683-.07-1.03l-.013-.056a1.991 1.991 0 01.125-1.488c.282-.542.721-.971 1.235-1.207.14-.065.29-.12.44-.165.772-.243 1.537-.088 2.126.37.159.121.324.227.494.316.542.283 1.157.34 1.767.14.069-.022.14-.048.206-.078.298-.135.547-.354.74-.635.161-.233.301-.512.42-.835A6.957 6.957 0 0115 8c0 3.86-3.14 7-7 7z' }))
-                ]),
-
                 // Si no es FB ni TW verificado, mostrar el username normal abajo (estilo original)
                 verificationType === 'none' && (
                     isEditable 
@@ -374,7 +350,6 @@ const GeneratorPage = () => {
     const fileInputRef = useRef(null);
     const batchContainerRef = useRef(null);
 
-    // --- Smart Text Cleaning Helper ---
     const cleanLineText = (text) => {
         let cleaned = text.trim();
         cleaned = cleaned.replace(/^\d+\s*[\.\-\)]+\s*/, '');
@@ -506,7 +481,6 @@ const GeneratorPage = () => {
                         React.createElement('button', { className: `control-btn ${theme === 'light' ? 'active' : ''}`, onClick: () => setTheme('light') }, 'Claro'),
                     ])
                 ]),
-                // NUEVA SECCIÓN: Verificación FB / TW
                 React.createElement('div', { className: 'control-group' }, [
                     React.createElement('label', {}, 'Verificación'),
                     React.createElement('div', { className: 'control-btn-group' }, [
