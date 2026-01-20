@@ -222,23 +222,25 @@ const ContactForm = () => {
 
 /**
  * AutosizeInput Component
- * Implementación de auto-width real.
- * El componente colapsa o se expande milimétricamente según el texto escrito
- * mediante un span invisible que actúa como guía de tamaño para el grid.
+ * Implementación de auto-width estricto y bidireccional.
+ * Colapsa o se expande milimétricamente según el texto real.
+ * Ignora el ancho del placeholder para que el icono se pegue al texto escrito.
  */
 const AutosizeInput = ({ value, onChange, className, style, placeholder, isEditable }) => {
     if (!isEditable) return React.createElement('div', { className, style }, value);
 
-    // El span mide el ancho real. Si el texto está vacío, usamos una cadena vacía para que mida 0.
+    // El span invisible mide el ancho exacto del contenido. 
+    // Si value es "", el span colapsa a ancho 0 (o casi 0), permitiendo que el badge se pegue.
     const measureValue = value || "";
 
     return React.createElement('div', {
+        className: 'autosize-input-wrapper',
         style: {
             display: 'inline-grid',
             verticalAlign: 'middle',
             alignItems: 'center',
-            width: 'fit-content', // Esto es vital para que colapse
-            justifyContent: 'start'
+            width: 'fit-content', // Clave para que el contenedor colapse con el contenido
+            gridTemplateColumns: 'min-content' // Fuerza a las columnas a ser tan pequeñas como sea posible
         }
     }, [
         React.createElement('span', {
@@ -257,7 +259,7 @@ const AutosizeInput = ({ value, onChange, className, style, placeholder, isEdita
                 fontWeight: 'inherit',
                 letterSpacing: 'inherit',
                 lineHeight: 'inherit',
-                minWidth: '0px'
+                minWidth: '1px' // Un mínimo para evitar saltos bruscos en vacío
             }
         }, measureValue),
         React.createElement('input', {
@@ -280,7 +282,8 @@ const AutosizeInput = ({ value, onChange, className, style, placeholder, isEdita
                 fontWeight: 'inherit',
                 letterSpacing: 'inherit',
                 lineHeight: 'inherit',
-                color: 'inherit'
+                color: 'inherit',
+                minWidth: '0' // Permite colapsar más allá del ancho por defecto del navegador
             }
         })
     ]);
@@ -288,8 +291,9 @@ const AutosizeInput = ({ value, onChange, className, style, placeholder, isEdita
 
 /**
  * TweetCardUI Component
- * Alineación dinámica total. El ícono de verificación está pegado al nombre
- * gracias a que row-primary es un flex-container de ancho fit-content.
+ * Layout de unidad compacta. Se asegura de que el encabezado no estire 
+ * los campos de texto, permitiendo que el icono de verificación responda 
+ * dinámicamente tanto al crecimiento como al decrecimiento del texto.
  */
 const TweetCardUI = ({ 
     txt, 
@@ -319,7 +323,7 @@ const TweetCardUI = ({
         flexShrink: 0
     };
 
-    const headerContainerStyle = {
+    const headerAlignStyle = {
         display: 'flex',
         alignItems: 'center',
         justifyContent: align.includes('center') ? 'center' : (align.includes('right') ? 'flex-end' : 'flex-start'),
@@ -331,7 +335,7 @@ const TweetCardUI = ({
         className: `tweet-card ${theme} ${font} ${align} ${!isEditable ? 'tweet-card-batch' : ''}`,
         style: !isEditable ? { marginBottom: '20px' } : {} 
     }, [
-        React.createElement('div', { key: 'header', style: headerContainerStyle }, [
+        React.createElement('div', { key: 'header', style: headerAlignStyle }, [
             React.createElement('img', { 
                 key: 'avatar', 
                 src: avatarUrl, 
@@ -345,12 +349,13 @@ const TweetCardUI = ({
                     display: 'flex', 
                     flexDirection: 'column', 
                     alignItems: align.includes('center') ? 'center' : (align.includes('right') ? 'flex-end' : 'flex-start'),
-                    width: 'fit-content', // Obligatorio para que no crezca más que el texto
-                    flexGrow: 0,
-                    flexShrink: 0
+                    width: 'auto', // Asegura ancho dinámico
+                    flexGrow: 0,   // Evita que este bloque se expanda y aleje el badge
+                    flexShrink: 1,
+                    minWidth: 0
                 } 
             }, [
-                // Fila principal: [Nombre] [Verificación] [@User si es TW]
+                // Fila primaria: [Nombre] [Palomita] [@User si es TW]
                 React.createElement('div', { 
                     key: 'row-primary', 
                     style: { display: 'flex', alignItems: 'center', flexWrap: 'nowrap', width: 'fit-content' } 
@@ -371,7 +376,7 @@ const TweetCardUI = ({
                         alt: 'verificado'
                     }),
 
-                    // Twitter: handle pegado al nombre
+                    // TW: @usuario pegado al badge
                     verificationType === 'tw' && React.createElement(AutosizeInput, {
                         key: 'at-field',
                         value: username,
@@ -382,7 +387,7 @@ const TweetCardUI = ({
                     })
                 ]),
 
-                // Handle abajo si no hay plataforma específica
+                // Si no hay plataforma o es FB, el @usuario va debajo
                 verificationType === 'none' && React.createElement(AutosizeInput, {
                     key: 'at-standard',
                     value: username,
