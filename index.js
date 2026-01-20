@@ -281,8 +281,7 @@ const AutosizeInput = ({ value, onChange, className, style, placeholder, isEdita
 
 /**
  * TweetCardUI Component
- * Layout corregido. Se eliminaron los flex-grow: 1 que estiraban los contenedores.
- * Ahora la información del usuario es un bloque compacto (fit-content).
+ * Layout corregido. En modo FB, se elimina el campo de @usuario para dejar solo el nombre y el badge.
  */
 const TweetCardUI = ({ 
     txt, 
@@ -341,13 +340,12 @@ const TweetCardUI = ({
                     display: 'flex', 
                     flexDirection: 'column', 
                     alignItems: align.includes('center') ? 'center' : (align.includes('right') ? 'flex-end' : 'flex-start'),
-                    width: 'fit-content', // Solo lo necesario para los nombres
+                    width: 'fit-content',
                     flexGrow: 0,
                     flexShrink: 0,
                     minWidth: 0
                 } 
             }, [
-                // Fila primaria: Siempre junta y a ancho exacto
                 React.createElement('div', { 
                     key: 'row-primary', 
                     style: { display: 'flex', alignItems: 'center', flexWrap: 'nowrap', width: 'fit-content' } 
@@ -368,7 +366,7 @@ const TweetCardUI = ({
                         alt: 'verificado'
                     }),
 
-                    // Twitter: Usuario a la par
+                    // Twitter: Usuario a la par del badge
                     verificationType === 'tw' && React.createElement(AutosizeInput, {
                         key: 'at-field',
                         value: username,
@@ -379,8 +377,8 @@ const TweetCardUI = ({
                     })
                 ]),
 
-                // Usuario debajo si no es TW
-                verificationType !== 'tw' && React.createElement(AutosizeInput, {
+                // Usuario debajo solo si no hay verificación (Modo FB oculta el @usuario)
+                verificationType === 'none' && React.createElement(AutosizeInput, {
                     key: 'at-standard',
                     value: username,
                     onChange: isEditable ? e => setUsername(e.target.value) : undefined,
