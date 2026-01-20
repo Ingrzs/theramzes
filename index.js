@@ -223,14 +223,12 @@ const ContactForm = () => {
 /**
  * AutosizeInput Component
  * Implementación de auto-width estricto y bidireccional.
- * Colapsa o se expande milimétricamente según el texto real.
- * Ignora el ancho del placeholder para que el icono se pegue al texto escrito.
+ * Colapsa o se expande milimétricamente según el texto real escrito.
+ * Se fuerza 'min-width: 0' en el input para que pueda colapsar correctamente.
  */
 const AutosizeInput = ({ value, onChange, className, style, placeholder, isEditable }) => {
     if (!isEditable) return React.createElement('div', { className, style }, value);
 
-    // El span invisible mide el ancho exacto del contenido. 
-    // Si value es "", el span colapsa a ancho 0 (o casi 0), permitiendo que el badge se pegue.
     const measureValue = value || "";
 
     return React.createElement('div', {
@@ -239,8 +237,7 @@ const AutosizeInput = ({ value, onChange, className, style, placeholder, isEdita
             display: 'inline-grid',
             verticalAlign: 'middle',
             alignItems: 'center',
-            width: 'fit-content', // Clave para que el contenedor colapse con el contenido
-            gridTemplateColumns: 'min-content' // Fuerza a las columnas a ser tan pequeñas como sea posible
+            width: 'fit-content'
         }
     }, [
         React.createElement('span', {
@@ -259,7 +256,7 @@ const AutosizeInput = ({ value, onChange, className, style, placeholder, isEdita
                 fontWeight: 'inherit',
                 letterSpacing: 'inherit',
                 lineHeight: 'inherit',
-                minWidth: '1px' // Un mínimo para evitar saltos bruscos en vacío
+                minWidth: '0px'
             }
         }, measureValue),
         React.createElement('input', {
@@ -283,7 +280,7 @@ const AutosizeInput = ({ value, onChange, className, style, placeholder, isEdita
                 letterSpacing: 'inherit',
                 lineHeight: 'inherit',
                 color: 'inherit',
-                minWidth: '0' // Permite colapsar más allá del ancho por defecto del navegador
+                minWidth: '0' 
             }
         })
     ]);
@@ -291,9 +288,8 @@ const AutosizeInput = ({ value, onChange, className, style, placeholder, isEdita
 
 /**
  * TweetCardUI Component
- * Layout de unidad compacta. Se asegura de que el encabezado no estire 
- * los campos de texto, permitiendo que el icono de verificación responda 
- * dinámicamente tanto al crecimiento como al decrecimiento del texto.
+ * Layout de unidad compacta. Los iconos de verificación se pegan al nombre
+ * gracias a contenedores 'fit-content' y la técnica AutosizeInput.
  */
 const TweetCardUI = ({ 
     txt, 
@@ -309,8 +305,11 @@ const TweetCardUI = ({
     onAvatarClick,
     verificationType = 'none' 
 }) => {
-    const twBadge = "https://i.ibb.co/Gv7hRLfZ/twitter.jpg";
-    const fbBadge = "https://i.ibb.co/Xx8B1kBg/Gemini-Generated-Image-hzflazhzflazhzfl.png";
+    // SVG de Twitter/X optimizado proporcionado por el usuario
+    const twBadge = `data:image/svg+xml;base64,${btoa('<svg width="200" height="200" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M22.25 12C22.25 10.57 21.37 9.33 20.06 8.66C20.52 7.27 20.26 5.76 19.25 4.75C18.24 3.74 16.73 3.48 15.34 3.94C14.67 2.63 13.43 1.75 12 1.75C10.57 1.75 9.33 2.63 8.66 3.94C7.27 3.48 5.76 3.74 4.75 4.75C3.74 5.76 3.48 7.27 3.94 8.66C2.63 9.33 1.75 10.57 1.75 12C1.75 13.43 2.63 14.67 3.94 15.34C3.48 16.73 3.74 18.24 4.75 19.25C5.76 20.26 7.27 20.52 8.66 20.06C9.33 21.37 10.57 22.25 12 22.25C13.43 22.25 14.67 21.37 15.34 20.06C16.73 20.52 18.24 20.26 19.25 19.25C20.26 18.24 20.52 16.73 20.06 15.34C21.37 14.67 22.25 13.43 22.25 12Z" fill="#1D9BF0"/><path d="M10.5 15.25L7 11.75L8.06 10.69L10.5 13.13L15.94 7.69L17 8.75L10.5 15.25Z" fill="white"/></svg>')}`;
+    
+    // SVG de Facebook optimizado proporcionado por el usuario
+    const fbBadge = `data:image/svg+xml;base64,${btoa('<svg width="200" height="200" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="M50 5 L54.1 8.5 58.8 6.5 62.3 10.5 67.5 9.5 70 14.5 75.5 14.5 77 20 82.5 21.5 83 27 88 30 87 35.5 91 39.5 89 45 92 50 89 55 91 60.5 87 64.5 88 70 83 73 82.5 78.5 77 80 75.5 85.5 70 85.5 67.5 90.5 62.3 89.5 58.8 93.5 54.1 91.5 50 95 45.9 91.5 41.2 93.5 37.7 89.5 32.5 90.5 30 85.5 24.5 85.5 23 80 17.5 78.5 17 73 12 70 13 64.5 9 60.5 11 55 8 50 11 45 9 39.5 13 35.5 12 30 17 27 17.5 21.5 23 20 24.5 14.5 30 14.5 32.5 9.5 37.7 10.5 41.2 6.5 45.9 8.5 Z" fill="#1877F2" stroke="#1877F2" stroke-width="3" stroke-linejoin="round"/><path d="M33 52 L44 63 L68 38" fill="none" stroke="white" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></svg>')}`;
 
     const badgeStyle = {
         width: '18px',
@@ -349,13 +348,12 @@ const TweetCardUI = ({
                     display: 'flex', 
                     flexDirection: 'column', 
                     alignItems: align.includes('center') ? 'center' : (align.includes('right') ? 'flex-end' : 'flex-start'),
-                    width: 'auto', // Asegura ancho dinámico
-                    flexGrow: 0,   // Evita que este bloque se expanda y aleje el badge
+                    width: 'fit-content',
+                    flexGrow: 0,
                     flexShrink: 1,
                     minWidth: 0
                 } 
             }, [
-                // Fila primaria: [Nombre] [Palomita] [@User si es TW]
                 React.createElement('div', { 
                     key: 'row-primary', 
                     style: { display: 'flex', alignItems: 'center', flexWrap: 'nowrap', width: 'fit-content' } 
@@ -376,7 +374,6 @@ const TweetCardUI = ({
                         alt: 'verificado'
                     }),
 
-                    // TW: @usuario pegado al badge
                     verificationType === 'tw' && React.createElement(AutosizeInput, {
                         key: 'at-field',
                         value: username,
@@ -387,7 +384,6 @@ const TweetCardUI = ({
                     })
                 ]),
 
-                // Si no hay plataforma o es FB, el @usuario va debajo
                 verificationType === 'none' && React.createElement(AutosizeInput, {
                     key: 'at-standard',
                     value: username,
