@@ -1,7 +1,7 @@
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getFirestore, collection, getDocs, getDoc, doc, query, where, orderBy, limit, startAfter } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import React, { useState, useEffect, useCallback, useRef } from 'https://esm.sh/react@18';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'https://esm.sh/react@18';
 import ReactDOM from 'https://esm.sh/react-dom@18/client';
 import Fuse from 'https://esm.sh/fuse.js@7.0.0';
 import { toPng } from 'https://esm.sh/html-to-image@1.11.11';
@@ -220,7 +220,47 @@ const ContactForm = () => {
     ]);
 };
 
-// --- Extract TweetCardUI Component ---
+// --- Helper for Autosizing Inputs ---
+const AutosizeInput = ({ value, onChange, className, style, placeholder, isEditable }) => {
+    if (!isEditable) return React.createElement('div', { className, style }, value);
+
+    return React.createElement('div', {
+        style: {
+            display: 'inline-grid',
+            verticalAlign: 'middle',
+            alignItems: 'center'
+        }
+    }, [
+        React.createElement('span', {
+            key: 'measure',
+            style: {
+                ...style,
+                gridArea: '1/1',
+                visibility: 'hidden',
+                whiteSpace: 'pre',
+                padding: '0'
+            }
+        }, value || placeholder),
+        React.createElement('input', {
+            key: 'input',
+            className: `${className} editable-input`,
+            value: value,
+            onChange: onChange,
+            placeholder: placeholder,
+            style: {
+                ...style,
+                gridArea: '1/1',
+                width: '100%',
+                background: 'transparent',
+                border: 'none',
+                padding: '0',
+                outline: 'none'
+            }
+        })
+    ]);
+};
+
+// --- Updated TweetCardUI Component ---
 const TweetCardUI = ({ 
     txt, 
     isEditable = false, 
@@ -233,9 +273,8 @@ const TweetCardUI = ({
     username, 
     setUsername, 
     onAvatarClick,
-    verificationType = 'none' // 'none', 'tw', 'fb'
+    verificationType = 'none' 
 }) => {
-    const isDark = theme === 'dark';
     const twBadge = "https://i.ibb.co/Gv7hRLfZ/twitter.jpg";
     const fbBadge = "https://i.ibb.co/Xx8B1kBg/Gemini-Generated-Image-hzflazhzflazhzfl.png";
 
@@ -243,78 +282,69 @@ const TweetCardUI = ({
         width: '18px',
         height: '18px',
         marginLeft: '4px',
+        marginRight: verificationType === 'tw' ? '6px' : '0',
         verticalAlign: 'middle',
         borderRadius: '50%',
         display: 'inline-block',
         flexShrink: 0
     };
 
+    const headerAlignStyle = {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: align.includes('center') ? 'center' : (align.includes('right') ? 'flex-end' : 'flex-start'),
+        width: '100%'
+    };
+
     return React.createElement('div', { 
         className: `tweet-card ${theme} ${font} ${align} ${!isEditable ? 'tweet-card-batch' : ''}`,
         style: !isEditable ? { marginBottom: '20px' } : {} 
     }, [
-        React.createElement('div', { key: 'header', className: 'tweet-header' }, [
+        React.createElement('div', { key: 'header', className: 'tweet-header', style: headerAlignStyle }, [
             React.createElement('img', { 
                 key: 'avatar', 
                 src: avatarUrl, 
                 className: 'tweet-avatar', 
                 onClick: isEditable ? onAvatarClick : undefined 
             }),
-            React.createElement('div', { key: 'info', className: 'tweet-user-info text-left' }, [
-                // Fila de Nombre + Badge + (opcional) @usuario para TW
-                React.createElement('div', { key: 'name-row', style: { display: 'flex', alignItems: 'center', flexWrap: 'nowrap', gap: '2px' } }, [
-                    isEditable 
-                    ? React.createElement('input', { 
-                        key: 'name-in', 
-                        className: 'editable-input tweet-name', 
-                        style: { width: 'fit-content', minWidth: '10px' },
-                        size: name.length || 1,
-                        value: name, 
-                        onChange: e => setName(e.target.value), 
-                        placeholder: "Nombre" 
-                    })
-                    : React.createElement('div', { key: 'name', className: 'tweet-name' }, name),
+            React.createElement('div', { key: 'info', className: 'tweet-user-info' }, [
+                // Layout for Name + Verification + (Twitter @handle)
+                React.createElement('div', { key: 'row-primary', style: { display: 'flex', alignItems: 'center', flexWrap: 'nowrap' } }, [
+                    React.createElement(AutosizeInput, {
+                        key: 'name-field',
+                        value: name,
+                        onChange: isEditable ? e => setName(e.target.value) : undefined,
+                        className: 'tweet-name',
+                        placeholder: 'Nombre',
+                        isEditable
+                    }),
                     
-                    // Mostrar badge si es TW o FB
                     verificationType !== 'none' && React.createElement('img', { 
-                        key: 'badge', 
+                        key: 'badge-img', 
                         src: verificationType === 'tw' ? twBadge : fbBadge,
                         style: badgeStyle,
                         alt: 'verificado'
                     }),
 
-                    // TW Layout: @usuario pegado al badge
-                    verificationType === 'tw' && React.createElement('div', { 
-                        key: 'tw-at', 
-                        className: 'tweet-username', 
-                        style: { marginLeft: '6px', fontSize: '0.9rem', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center' } 
-                    }, [
-                        isEditable 
-                        ? React.createElement('input', { 
-                            key: 'at-in', 
-                            className: 'editable-input', 
-                            style: { width: 'fit-content', minWidth: '10px' },
-                            size: username.length || 1,
-                            value: username, 
-                            onChange: e => setUsername(e.target.value), 
-                            placeholder: "@usuario" 
-                        })
-                        : username
-                    ])
-                ]),
-                
-                // Si no es FB ni TW verificado, mostrar el username normal abajo (estilo original)
-                verificationType === 'none' && (
-                    isEditable 
-                    ? React.createElement('input', { 
-                        key: 'user-in', 
-                        className: 'editable-input tweet-username', 
-                        value: username, 
-                        onChange: e => setUsername(e.target.value), 
-                        placeholder: "@usuario" 
+                    verificationType === 'tw' && React.createElement(AutosizeInput, {
+                        key: 'at-field',
+                        value: username,
+                        onChange: isEditable ? e => setUsername(e.target.value) : undefined,
+                        className: 'tweet-username',
+                        placeholder: '@usuario',
+                        isEditable
                     })
-                    : React.createElement('div', { key: 'user', className: 'tweet-username' }, username)
-                )
+                ]),
+
+                // Case for Standard Layout (No FB/TW active)
+                verificationType === 'none' && React.createElement(AutosizeInput, {
+                    key: 'at-standard',
+                    value: username,
+                    onChange: isEditable ? e => setUsername(e.target.value) : undefined,
+                    className: 'tweet-username',
+                    placeholder: '@usuario',
+                    isEditable
+                })
             ])
         ]),
         React.createElement('div', { key: 'body', className: 'tweet-body' }, txt)
@@ -340,7 +370,7 @@ const GeneratorPage = () => {
     const [font, setFont] = useState('font-inter'); 
     const [align, setAlign] = useState('text-left');
     const [theme, setTheme] = useState('dark'); 
-    const [verificationType, setVerificationType] = useState('none'); // 'none', 'tw', 'fb'
+    const [verificationType, setVerificationType] = useState('none'); 
     
     const [inputText, setInputText] = useState('Haz clic en el nombre o foto para editar.\nEscribe aquí tu frase.\nUsa "Enter" para crear nuevas imágenes.');
 
