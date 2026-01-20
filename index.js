@@ -220,20 +220,28 @@ const ContactForm = () => {
     ]);
 };
 
-// --- Helper for Dynamic Autosizing Inputs (Fixed Alignment) ---
+/**
+ * AutosizeInput Component
+ * Ajusta el ancho del input de forma ultra precisa al contenido del texto.
+ * Si el texto está vacío, el ancho es mínimo (0 o casi 0) para que el ícono
+ * de verificación se pegue al avatar.
+ */
 const AutosizeInput = ({ value, onChange, className, style, placeholder, isEditable }) => {
     if (!isEditable) return React.createElement('div', { className, style }, value);
 
-    // Si el valor está vacío, el medidor span también debe estarlo (o casi) 
-    // para que el ícono se pegue al elemento anterior.
-    const displayValue = value === "" ? "" : value;
+    // Si el valor está vacío y estamos editando, usamos una cadena casi vacía para medir.
+    // No usamos el placeholder para medir el ancho porque el usuario quiere que el ícono
+    // se pegue a lo que haya ESCRITO, no al placeholder.
+    const measureValue = value || "";
 
     return React.createElement('div', {
         style: {
             display: 'inline-grid',
             verticalAlign: 'middle',
             alignItems: 'center',
-            width: 'fit-content' // Crucial: no debe expandirse más de lo necesario
+            width: 'fit-content',
+            padding: 0,
+            margin: 0
         }
     }, [
         React.createElement('span', {
@@ -245,13 +253,15 @@ const AutosizeInput = ({ value, onChange, className, style, placeholder, isEdita
                 visibility: 'hidden',
                 whiteSpace: 'pre',
                 padding: '0',
+                margin: '0',
                 border: 'none',
                 fontFamily: 'inherit',
                 fontSize: 'inherit',
                 fontWeight: 'inherit',
-                minWidth: '2px' // Mínimo para que el cursor sea visible
+                letterSpacing: 'inherit',
+                minWidth: '0px'
             }
-        }, displayValue || placeholder),
+        }, measureValue),
         React.createElement('input', {
             key: 'input',
             className: `${className} editable-input`,
@@ -265,16 +275,21 @@ const AutosizeInput = ({ value, onChange, className, style, placeholder, isEdita
                 background: 'transparent',
                 border: 'none',
                 padding: '0',
+                margin: '0',
                 outline: 'none',
                 fontFamily: 'inherit',
                 fontSize: 'inherit',
-                fontWeight: 'inherit'
+                fontWeight: 'inherit',
+                letterSpacing: 'inherit'
             }
         })
     ]);
 };
 
-// --- Updated TweetCardUI Component (Compact Header) ---
+/**
+ * TweetCardUI Component
+ * Diseñado para ser dinámico. El encabezado se ajusta al ancho de los elementos internos.
+ */
 const TweetCardUI = ({ 
     txt, 
     isEditable = false, 
@@ -295,7 +310,7 @@ const TweetCardUI = ({
     const badgeStyle = {
         width: '18px',
         height: '18px',
-        marginLeft: '2px', // Alineación pegada solicitada
+        marginLeft: '2px', // Espaciado mínimo para que esté "pegada"
         marginRight: verificationType === 'tw' ? '4px' : '0',
         verticalAlign: 'middle',
         borderRadius: '50%',
@@ -303,38 +318,38 @@ const TweetCardUI = ({
         flexShrink: 0
     };
 
-    const headerAlignStyle = {
+    const headerContainerStyle = {
         display: 'flex',
         alignItems: 'center',
         justifyContent: align.includes('center') ? 'center' : (align.includes('right') ? 'flex-end' : 'flex-start'),
-        width: '100%'
+        width: '100%',
+        marginBottom: '1rem'
     };
 
     return React.createElement('div', { 
         className: `tweet-card ${theme} ${font} ${align} ${!isEditable ? 'tweet-card-batch' : ''}`,
         style: !isEditable ? { marginBottom: '20px' } : {} 
     }, [
-        React.createElement('div', { key: 'header', className: 'tweet-header', style: headerAlignStyle }, [
+        React.createElement('div', { key: 'header', style: headerContainerStyle }, [
             React.createElement('img', { 
                 key: 'avatar', 
                 src: avatarUrl, 
                 className: 'tweet-avatar', 
+                style: { margin: 0, marginRight: '12px' }, // Margen controlado con el avatar
                 onClick: isEditable ? onAvatarClick : undefined 
             }),
             React.createElement('div', { 
                 key: 'info', 
-                className: 'tweet-user-info', 
                 style: { 
                     display: 'flex', 
                     flexDirection: 'column', 
                     alignItems: align.includes('center') ? 'center' : (align.includes('right') ? 'flex-end' : 'flex-start'),
-                    flexGrow: 0 // No dejar que este contenedor ocupe todo el espacio
+                    width: 'fit-content' // Crucial para que el contenedor no empuje al badge
                 } 
             }, [
-                
-                // Twitter/FB Header Row: [Nombre] [Badge] [@User] (Todo en una fila compacta)
+                // Layout Compacto: [Nombre] [Palomita] [@User] (Todo pegado en una fila)
                 React.createElement('div', { 
-                    key: 'primary-row', 
+                    key: 'row-primary', 
                     style: { display: 'flex', alignItems: 'center', flexWrap: 'nowrap', width: 'fit-content' } 
                 }, [
                     React.createElement(AutosizeInput, {
@@ -353,7 +368,7 @@ const TweetCardUI = ({
                         alt: 'verificado'
                     }),
 
-                    // TW Layout: @usuario va en la misma línea
+                    // En Twitter, el @usuario va en la misma línea
                     verificationType === 'tw' && React.createElement(AutosizeInput, {
                         key: 'at-field',
                         value: username,
