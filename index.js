@@ -23,19 +23,17 @@ try {
     console.error('Error inicializando Firebase:', error);
 }
 
-const CLOUDINARY_CLOUD_NAME = 'dbbdcvgbq';
 const optimizeImageUrl = (url, width = 600) => {
     if (!url || !url.startsWith('http')) return url;
     if (url.includes('res.cloudinary.com')) return url;
-    return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/fetch/f_auto,q_auto,w_${width}/${encodeURIComponent(url)}`;
+    return `https://res.cloudinary.com/dbbdcvgbq/image/fetch/f_auto,q_auto,w_${width}/${encodeURIComponent(url)}`;
 };
-const PLACEHOLDER_IMAGE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 9' fill='%232a2a2a'%3E%3C/svg%3E";
 
 const handleImageError = (e) => {
-    if (e.currentTarget.src !== PLACEHOLDER_IMAGE) e.currentTarget.src = PLACEHOLDER_IMAGE;
+    e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 9' fill='%232a2a2a'%3E%3C/svg%3E";
 };
 
-// --- Componentes de UI Globales ---
+// --- COMPONENTES GLOBALES ---
 
 const Header = () => React.createElement('header', { className: 'app-header' }, [
     React.createElement('h1', { key: 'h1' }, 'TheRamzes'),
@@ -50,7 +48,9 @@ const Navigation = ({ currentPage }) => {
         { id: 'generador', label: 'Generador', url: 'generador.html' },
         { id: 'descargas', label: 'Descargas', url: 'descargas.html' },
         { id: 'tutoriales', label: 'Tutoriales', url: 'tutoriales.html' },
-        { id: 'recursos', label: 'Recursos', url: 'recursos.html' }
+        { id: 'recursos', label: 'Recursos', url: 'recursos.html' },
+        { id: 'sobre-mi', label: 'Sobre Mí', url: 'sobre-mi.html' },
+        { id: 'contacto', label: 'Contacto', url: 'contacto.html' }
     ];
     return React.createElement('nav', { className: 'tabs-nav', style: { marginBottom: '2rem' } },
         tabs.map(tab => React.createElement('a', {
@@ -62,16 +62,14 @@ const Navigation = ({ currentPage }) => {
 };
 
 const Footer = () => React.createElement('footer', {}, [
-    React.createElement('div', { key: 'copy', style: { marginBottom: '1rem' } }, `© ${new Date().getFullYear()} TheRamzes`),
-    React.createElement('div', { key: 'links', style: { display: 'flex', gap: '1.5rem', justifyContent: 'center', flexWrap: 'wrap' } }, [
+    React.createElement('div', { key: 'copy' }, `© ${new Date().getFullYear()} TheRamzes`),
+    React.createElement('div', { key: 'links', style: { display: 'flex', gap: '1.5rem', justifyContent: 'center', marginTop: '1rem' } }, [
         React.createElement('a', { key: 'p', href: 'politicas.html', className: 'footer-link' }, 'Políticas de Privacidad'),
-        React.createElement('a', { key: 't', href: 'terminos.html', className: 'footer-link' }, 'Términos de Uso'),
-        React.createElement('a', { key: 'c', href: 'contacto.html', className: 'footer-link' }, 'Contacto'),
-        React.createElement('a', { key: 's', href: 'sobre-mi.html', className: 'footer-link' }, 'Sobre Mí')
+        React.createElement('a', { key: 't', href: 'terminos.html', className: 'footer-link' }, 'Términos de Uso')
     ])
 ]);
 
-// --- Páginas de Galería (Imágenes, Videos, Descargas, Tutoriales) ---
+// --- GALERÍAS ---
 
 const PromptGalleryPage = ({ category }) => {
     const [items, setItems] = useState([]);
@@ -94,10 +92,7 @@ const PromptGalleryPage = ({ category }) => {
     }, [category]);
 
     useEffect(() => {
-        if (!searchTerm) {
-            setFilteredItems(items);
-            return;
-        }
+        if (!searchTerm) { setFilteredItems(items); return; }
         const fuse = new Fuse(items, { keys: ['title', 'prompt', 'description'], threshold: 0.3 });
         setFilteredItems(fuse.search(searchTerm).map(r => r.item));
     }, [searchTerm, items]);
@@ -125,8 +120,8 @@ const PromptGalleryPage = ({ category }) => {
 const ImagePromptCard = ({ item, onShowDetails }) => {
     const [isPromptVisible, setIsPromptVisible] = useState(false);
     return React.createElement('div', { className: 'card', onClick: () => onShowDetails(item) }, [
-        React.createElement('img', { key: 'img', src: optimizeImageUrl(item.imageUrl), className: 'card-image', onError: handleImageError }),
-        React.createElement('div', { key: 'content', className: 'card-content' }, [
+        React.createElement('img', { src: optimizeImageUrl(item.imageUrl), className: 'card-image', onError: handleImageError }),
+        React.createElement('div', { className: 'card-content' }, [
             React.createElement('h3', { className: 'card-title' }, item.title),
             item.prompt && React.createElement('button', { 
                 className: 'card-button', 
@@ -154,63 +149,45 @@ const DetailModal = ({ item, onClose }) => {
     ]);
 };
 
-// --- Páginas Especiales (Generador, Capturador, Recursos) ---
+// --- PÁGINAS ESPECIALES ---
 
 const GeneratorPage = () => {
     const [text, setText] = useState('Tu frase o tweet aquí...');
-    const [author, setAuthor] = useState('TheRamzes');
     const generatorRef = useRef(null);
 
-    const handleDownload = async () => {
-        const dataUrl = await toPng(generatorRef.current);
-        const link = document.createElement('a');
-        link.download = `TheRamzes_Tweet_${Date.now()}.png`;
-        link.href = dataUrl;
-        link.click();
-    };
-
     return React.createElement('div', { className: 'contact-container' }, [
-        React.createElement('div', { ref: generatorRef, key: 'preview', style: { background: '#000', padding: '2.5rem', borderRadius: '16px', border: '1px solid #333', marginBottom: '2rem' } }, [
-            React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' } }, [
+        React.createElement('div', { 
+            ref: generatorRef, 
+            key: 'tweet', 
+            style: { background: '#000', padding: '2.5rem', borderRadius: '16px', border: '1px solid #333', marginBottom: '2rem' } 
+        }, [
+            React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' } }, [
                 React.createElement('img', { src: 'https://yt3.googleusercontent.com/UsEE3B7HZCqYlFrE6zI601Pq-_moV7q1diFWggkrSM5yI7imCvZWnBAjnOy5gp6_xx1LAZTUHg=s160-c-k-c0x00ffffff-no-rj', style: { width: '48px', borderRadius: '50%' } }),
                 React.createElement('div', null, [
-                    React.createElement('p', { style: { fontWeight: 'bold', margin: 0 } }, author),
-                    React.createElement('p', { style: { color: '#666', fontSize: '0.9rem', margin: 0 } }, `@${author.toLowerCase().replace(/\s/g, '')}`)
+                    React.createElement('p', { style: { fontWeight: 'bold', margin: 0, color: 'white' } }, 'TheRamzes'),
+                    React.createElement('p', { style: { color: '#666', fontSize: '0.9rem', margin: 0 } }, '@theramzes')
                 ])
             ]),
-            React.createElement('p', { style: { fontSize: '1.4rem', lineHeight: '1.4' } }, text)
+            React.createElement('p', { style: { fontSize: '1.5rem', lineHeight: '1.4', color: 'white', margin: 0 } }, text),
+            React.createElement('p', { style: { color: '#666', fontSize: '0.8rem', marginTop: '1.5rem', marginBotto: 0 } }, `${new Date().toLocaleTimeString()} · ${new Date().toLocaleDateString()}`)
         ]),
-        React.createElement('textarea', { key: 'input', className: 'search-input', style: {paddingLeft: '1rem', marginBottom: '1rem'}, value: text, onChange: (e) => setText(e.target.value) }),
-        React.createElement('input', { key: 'author', className: 'search-input', style: {paddingLeft: '1rem', marginBottom: '1rem'}, value: author, onChange: (e) => setAuthor(e.target.value) }),
-        React.createElement('button', { key: 'btn', onClick: handleDownload, className: 'btn-capture', style: {width: '100%'} }, 'Descargar Imagen')
-    ]);
-};
-
-const ResourcesPage = () => {
-    const [items, setItems] = useState([]);
-    const [disclaimer, setDisclaimer] = useState('');
-
-    useEffect(() => {
-        const fetch = async () => {
-            const snap = await getDocs(query(collection(db, 'content'), where('category', 'in', ['afiliados', 'recomendaciones'])));
-            setItems(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-            const setDoc = await getDoc(doc(db, 'settings', 'disclaimers'));
-            if (setDoc.exists()) setDisclaimer(setDoc.data().resourcesPageDisclaimer);
-        };
-        fetch();
-    }, []);
-
-    return React.createElement('div', { className: 'resources-container' }, [
-        disclaimer && React.createElement('p', { className: 'resources-disclaimer' }, disclaimer),
-        React.createElement('div', { className: 'recommendation-list' }, items.map(item => (
-            React.createElement('a', { key: item.id, href: item.linkUrl, className: 'recommendation-card has-link', target: '_blank' }, [
-                React.createElement('img', { src: optimizeImageUrl(item.imageUrl, 200), className: 'recommendation-card-image' }),
-                React.createElement('div', null, [
-                    React.createElement('h3', { className: 'recommendation-card-title' }, item.title),
-                    React.createElement('p', { className: 'recommendation-card-description' }, item.description)
-                ])
-            ])
-        )))
+        React.createElement('textarea', { 
+            className: 'search-input', 
+            style: {paddingLeft: '1rem', marginBottom: '1rem', height: '100px'}, 
+            value: text, 
+            onChange: (e) => setText(e.target.value) 
+        }),
+        React.createElement('button', { 
+            className: 'btn-capture', 
+            style: {width: '100%'},
+            onClick: async () => {
+                const dataUrl = await toPng(generatorRef.current);
+                const link = document.createElement('a');
+                link.download = `TheRamzes_Post_${Date.now()}.png`;
+                link.href = dataUrl;
+                link.click();
+            } 
+        }, 'Descargar Imagen')
     ]);
 };
 
@@ -221,17 +198,20 @@ const FrameCapturerPage = () => {
     const [dur, setDur] = useState(0);
     const vRef = useRef(null);
     const fRef = useRef(null);
-
     const format = (t) => `${Math.floor(t/60)}:${Math.floor(t%60).toString().padStart(2,'0')}.${Math.floor((t%1)*1000).toString().padStart(3,'0')}`;
 
     if (!videoSrc) return React.createElement('div', { className: 'drop-zone', onClick: () => fRef.current.click() }, [
         React.createElement('input', { type: 'file', ref: fRef, hidden: true, accept: 'video/*', onChange: (e) => setVideoSrc(URL.createObjectURL(e.target.files[0])) }),
-        React.createElement('p', null, 'Haz clic para subir un video y extraer frames en alta resolución.')
+        React.createElement('p', null, 'Carga un video para extraer frames en alta resolución.')
     ]);
 
     return React.createElement('div', { className: 'video-editor-layout' }, [
         React.createElement('div', { key: 'player' }, [
-            React.createElement('video', { ref: vRef, src: videoSrc, className: 'video-element', onLoadedMetadata: () => { setDur(vRef.current.duration); vRef.current.currentTime = vRef.current.duration; }, onTimeUpdate: () => setCurr(vRef.current.currentTime) }),
+            React.createElement('video', { 
+                ref: vRef, src: videoSrc, className: 'video-element', 
+                onLoadedMetadata: () => setDur(vRef.current.duration), 
+                onTimeUpdate: () => setCurr(vRef.current.currentTime) 
+            }),
             React.createElement('div', { className: 'video-controls-panel' }, [
                 React.createElement('input', { type: 'range', className: 'scrubbing-slider', min: 0, max: dur, step: 0.001, value: curr, onChange: (e) => vRef.current.currentTime = e.target.value }),
                 React.createElement('p', { className: 'time-display' }, format(curr)),
@@ -247,24 +227,25 @@ const FrameCapturerPage = () => {
                 React.createElement('button', { className: 'btn-reset', style: {width:'100%', marginTop:'1rem'}, onClick: () => setVideoSrc(null) }, 'Cerrar Video')
             ])
         ]),
-        React.createElement('div', { key: 'sidebar', className: 'captures-sidebar' }, captures.map(c => React.createElement('div', { key: c.id, className: 'capture-item' }, [
+        React.createElement('div', { className: 'captures-sidebar' }, captures.map(c => React.createElement('div', { key: c.id, className: 'capture-item' }, [
             React.createElement('img', { src: c.url }),
-            React.createElement('button', { className: 'capture-overlay-btn', onClick: () => { const a = document.createElement('a'); a.href = c.url; a.download=`frame_${c.t}.png`; a.click(); } }, 'Guardar')
+            React.createElement('button', { className: 'capture-overlay-btn', onClick: () => { const a = document.createElement('a'); a.href = c.url; a.download=`f_${c.t}.png`; a.click(); } }, 'Guardar')
         ])))
     ]);
 };
-
-// --- Páginas Estáticas (Sobre Mí y Contacto) ---
 
 const AboutMePage = () => React.createElement('div', { className: 'about-me-container' }, [
     React.createElement('img', { key: 'img', src: 'https://yt3.googleusercontent.com/UsEE3B7HZCqYlFrE6zI601Pq-_moV7q1diFWggkrSM5yI7imCvZWnBAjnOy5gp6_xx1LAZTUHg=s160-c-k-c0x00ffffff-no-rj', className: 'profile-pic' }),
     React.createElement('h2', { key: 'h2' }, 'TheRamzes'),
     React.createElement('p', { key: 'p', className: 'bio' }, 'Explorador de la IA, creador de contenido y apasionado por compartir herramientas que faciliten el proceso creativo.'),
-    React.createElement('div', { key: 'links', className: 'links-container' }, [
-        React.createElement('a', { key: 'yt', href: 'https://youtube.com/@TheRamzes', className: 'social-link', target: '_blank' }, 'YouTube'),
-        React.createElement('a', { key: 'tw', href: 'https://twitter.com/TheRamzes', className: 'social-link', target: '_blank' }, 'Twitter'),
-        React.createElement('a', { key: 'ig', href: 'https://instagram.com/TheRamzes', className: 'social-link', target: '_blank' }, 'Instagram')
-    ])
+    React.createElement('div', { key: 'links', className: 'recommendation-list', style: {marginTop: '2rem'} }, [
+        { label: 'Canal de YouTube', url: 'https://youtube.com/@TheRamzes' },
+        { label: 'Sígueme en Twitter / X', url: 'https://twitter.com/TheRamzes' },
+        { label: 'Instagram Oficial', url: 'https://instagram.com/TheRamzes' }
+    ].map(link => React.createElement('a', { 
+        key: link.label, href: link.url, className: 'recommendation-card has-link', target: '_blank', 
+        style: {justifyContent: 'center', fontWeight: '600', padding: '1.2rem'} 
+    }, link.label)))
 ]);
 
 const ContactPage = () => React.createElement('div', { className: 'contact-container' }, [
@@ -277,11 +258,30 @@ const ContactPage = () => React.createElement('div', { className: 'contact-conta
     ])
 ]);
 
-// --- App Principal ---
+const ResourcesPage = () => {
+    const [items, setItems] = useState([]);
+    useEffect(() => {
+        const f = async () => {
+            const snap = await getDocs(query(collection(db, 'content'), where('category', 'in', ['afiliados', 'recomendaciones'])));
+            setItems(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        };
+        f();
+    }, []);
+    return React.createElement('div', { className: 'resources-container' }, items.map(item => (
+        React.createElement('a', { key: item.id, href: item.linkUrl, className: 'recommendation-card has-link', target: '_blank' }, [
+            React.createElement('img', { src: optimizeImageUrl(item.imageUrl, 200), className: 'recommendation-card-image' }),
+            React.createElement('div', null, [
+                React.createElement('h3', { className: 'recommendation-card-title' }, item.title),
+                React.createElement('p', { className: 'recommendation-card-description' }, item.description)
+            ])
+        ])
+    )));
+};
+
+// --- APP ROOT ---
 
 const App = () => {
     const page = document.getElementById('root')?.getAttribute('data-page') || 'imagenes';
-
     const content = () => {
         switch (page) {
             case 'imagenes': case 'videos': case 'descargas': case 'tutoriales': return React.createElement(PromptGalleryPage, { category: page });
@@ -293,7 +293,6 @@ const App = () => {
             default: return React.createElement(PromptGalleryPage, { category: 'imagenes' });
         }
     };
-
     return React.createElement('div', null, [
         React.createElement(Header, { key: 'h' }),
         React.createElement(Navigation, { key: 'n', currentPage: page }),
