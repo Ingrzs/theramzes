@@ -5,7 +5,7 @@ import ReactDOM from 'https://esm.sh/react-dom@18/client';
 import Fuse from 'https://esm.sh/fuse.js@7.0.0';
 import { toPng } from 'https://esm.sh/html-to-image@1.11.11';
 
-// La configuración de Firebase se inyecta aquí durante el proceso de despliegue.
+// Configuración de Firebase
 const firebaseConfig = {
     apiKey: "__FIREBASE_API_KEY__", 
     authDomain: "theramzes-creations.firebaseapp.com",
@@ -39,18 +39,16 @@ const handleImageError = (e) => {
     }
 };
 
-// --- Components ---
-
-const Footer = () => (
-    React.createElement('footer', {}, [
-        React.createElement('div', { style: { marginBottom: '1rem' } }, `© ${new Date().getFullYear()} TheRamzes`),
-        React.createElement('div', { style: { display: 'flex', gap: '1.5rem', justifyContent: 'center', flexWrap: 'wrap' } }, [
-            React.createElement('a', { href: 'politicas.html', className: 'footer-link' }, 'Políticas de Privacidad'),
-            React.createElement('a', { href: 'terminos.html', className: 'footer-link' }, 'Términos de Uso'),
-            React.createElement('a', { href: 'contacto.html', className: 'footer-link' }, 'Contacto')
-        ])
+// --- Global Components ---
+const Footer = () => React.createElement('footer', {}, [
+    React.createElement('div', { key: 'copy', style: { marginBottom: '1rem' } }, `© ${new Date().getFullYear()} TheRamzes`),
+    React.createElement('div', { key: 'links', style: { display: 'flex', gap: '1.5rem', justifyContent: 'center', flexWrap: 'wrap' } }, [
+        React.createElement('a', { key: 'p', href: 'politicas.html', className: 'footer-link' }, 'Políticas de Privacidad'),
+        React.createElement('a', { key: 't', href: 'terminos.html', className: 'footer-link' }, 'Términos de Uso'),
+        React.createElement('a', { key: 'c', href: 'contacto.html', className: 'footer-link' }, 'Contacto'),
+        React.createElement('a', { key: 's', href: 'sobre-mi.html', className: 'footer-link' }, 'Sobre Mí')
     ])
-);
+]);
 
 const Navigation = ({ currentPage }) => {
     const tabs = [
@@ -72,319 +70,229 @@ const Navigation = ({ currentPage }) => {
     );
 };
 
-// --- Frame Capturer Page ---
-const FrameCapturerPage = () => {
-    const [videoSrc, setVideoSrc] = useState(null);
-    const [fileName, setFileName] = useState('');
-    const [isDragging, setIsDragging] = useState(false);
-    const [captures, setCaptures] = useState([]);
-    const [currentTime, setCurrentTime] = useState(0);
-    const [duration, setDuration] = useState(0);
-    const [res, setRes] = useState({ w: 0, h: 0 });
-    const videoRef = useRef(null);
-    const fileInputRef = useRef(null);
-
-    const formatTime = (time) => {
-        const mins = Math.floor(time / 60);
-        const secs = Math.floor(time % 60);
-        const ms = Math.floor((time % 1) * 1000);
-        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;
-    };
-
-    const handleFile = (file) => {
-        if (!file || !file.type.startsWith('video/')) {
-            alert('Por favor, sube un archivo de video válido (MP4, WebM, MOV).');
-            return;
-        }
-        const url = URL.createObjectURL(file);
-        setVideoSrc(url);
-        setFileName(file.name.split('.')[0]);
-        setCaptures([]);
-    };
-
-    const onDrop = (e) => {
-        e.preventDefault();
-        setIsDragging(false);
-        const file = e.dataTransfer.files[0];
-        handleFile(file);
-    };
-
-    const handleCapture = () => {
-        if (!videoRef.current) return;
-        const video = videoRef.current;
-        const canvas = document.createElement('canvas');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        
-        const dataUrl = canvas.toDataURL('image/png');
-        const timestamp = formatTime(video.currentTime);
-        
-        const newCapture = {
-            id: Date.now(),
-            dataUrl,
-            time: timestamp,
-            timeRaw: video.currentTime,
-            res: `${canvas.width}x${canvas.height}px`
-        };
-        
-        setCaptures(prev => [newCapture, ...prev]);
-    };
-
-    const downloadCapture = (cap) => {
-        const link = document.createElement('a');
-        link.href = cap.dataUrl;
-        link.download = `TheRamzes_Frame_${fileName}_${cap.time.replace(/[:.]/g, '-')}.png`;
-        link.click();
-    };
-
-    const seekBy = (seconds) => {
-        if (videoRef.current) {
-            videoRef.current.currentTime = Math.max(0, Math.min(videoRef.current.duration, videoRef.current.currentTime + seconds));
-        }
-    };
-
-    useEffect(() => {
-        if (videoRef.current && videoSrc) {
-            const video = videoRef.current;
-            const handleLoaded = () => {
-                setDuration(video.duration);
-                setRes({ w: video.videoWidth, h: video.videoHeight });
-                // Auto-seek to the end as requested
-                video.currentTime = video.duration;
-            };
-            const handleTimeUpdate = () => setCurrentTime(video.currentTime);
-            
-            video.addEventListener('loadedmetadata', handleLoaded);
-            video.addEventListener('timeupdate', handleTimeUpdate);
-            
-            return () => {
-                video.removeEventListener('loadedmetadata', handleLoaded);
-                video.removeEventListener('timeupdate', handleTimeUpdate);
-            };
-        }
-    }, [videoSrc]);
-
-    if (!videoSrc) {
-        return React.createElement('div', { className: 'capturador-container' }, [
-            React.createElement(Navigation, { currentPage: 'capturador' }),
-            React.createElement('div', { 
-                className: `drop-zone ${isDragging ? 'dragging' : ''}`,
-                onDragOver: (e) => { e.preventDefault(); setIsDragging(true); },
-                onDragLeave: () => setIsDragging(false),
-                onDrop: onDrop,
-                onClick: () => fileInputRef.current.click()
-            }, [
-                React.createElement('input', { 
-                    type: 'file', 
-                    ref: fileInputRef, 
-                    style: { display: 'none' }, 
-                    accept: 'video/*',
-                    onChange: (e) => handleFile(e.target.files[0])
-                }),
-                React.createElement('p', null, 'Arrastra tu video aquí o haz clic para seleccionar'),
-                React.createElement('button', { className: 'card-button' }, 'Subir desde Carpeta')
-            ])
-        ]);
-    }
-
-    return React.createElement('div', { className: 'capturador-container' }, [
-        React.createElement(Navigation, { currentPage: 'capturador' }),
-        React.createElement('div', { className: 'video-editor-layout' }, [
-            // Left Column: Player
-            React.createElement('div', { className: 'video-player-main' }, [
-                React.createElement('div', { className: 'video-preview-pane' }, [
-                    React.createElement('video', { 
-                        ref: videoRef,
-                        src: videoSrc,
-                        className: 'video-element',
-                        controls: false
-                    })
-                ]),
-                React.createElement('div', { className: 'video-controls-panel' }, [
-                    React.createElement('input', { 
-                        type: 'range', 
-                        className: 'scrubbing-slider',
-                        min: 0,
-                        max: duration || 0,
-                        step: 0.001,
-                        value: currentTime,
-                        onChange: (e) => { if (videoRef.current) videoRef.current.currentTime = parseFloat(e.target.value); }
-                    }),
-                    React.createElement('div', { className: 'time-display' }, `${formatTime(currentTime)} / ${formatTime(duration)}`),
-                    React.createElement('div', { className: 'control-buttons' }, [
-                        React.createElement('button', { className: 'btn-precision', onClick: () => seekBy(-1) }, '-1s'),
-                        React.createElement('button', { className: 'btn-precision', onClick: () => seekBy(-0.033) }, '-Frame'),
-                        React.createElement('button', { className: 'btn-capture', onClick: handleCapture }, 'Capturar Frame'),
-                        React.createElement('button', { className: 'btn-precision', onClick: () => seekBy(0.033) }, '+Frame'),
-                        React.createElement('button', { className: 'btn-precision', onClick: () => seekBy(1) }, '+1s')
-                    ]),
-                    React.createElement('div', { style: { textAlign: 'center' } }, 
-                        React.createElement('button', { className: 'btn-reset', onClick: () => setVideoSrc(null) }, 'Cambiar Video')
-                    )
-                ])
-            ]),
-            // Right Column: Gallery
-            React.createElement('div', { className: 'captures-sidebar' }, [
-                React.createElement('h3', { style: { marginBottom: '1rem' } }, 'Capturas'),
-                captures.length === 0 && React.createElement('p', { style: { color: 'var(--text-secondary)', fontSize: '0.9rem' } }, 'Captura un frame para que aparezca aquí.'),
-                captures.map(cap => React.createElement('div', { key: cap.id, className: 'capture-item' }, [
-                    React.createElement('img', { src: cap.dataUrl }),
-                    React.createElement('div', { className: 'capture-meta' }, [
-                        React.createElement('span', null, cap.time),
-                        React.createElement('span', null, cap.res)
-                    ]),
-                    React.createElement('button', { 
-                        className: 'capture-overlay-btn',
-                        onClick: () => downloadCapture(cap)
-                    }, 'Descargar')
-                ]))
-            ])
-        ])
-    ]);
-};
-
-// --- Other Pages ... (Existing code kept below) ---
-// Note: Keeping rest of index.js logic intact but ensuring App handles 'capturador'
+// --- Page Components ---
 
 const DetailModal = ({ item, onClose }) => {
     if (!item) return null;
-    
-    useEffect(() => {
-        const handleEsc = (e) => { if (e.key === 'Escape') onClose(); };
-        window.addEventListener('keydown', handleEsc);
-        return () => window.removeEventListener('keydown', handleEsc);
-    }, [onClose]);
-
     return React.createElement('div', { className: 'modal-backdrop', onClick: onClose }, [
-        React.createElement('div', { key: 'content', className: 'modal-content', onClick: e => e.stopPropagation() }, [
-            React.createElement('div', { key: 'header', className: 'modal-header' }, [
-                React.createElement('h2', { key: 'title' }, item.title),
-                React.createElement('button', { key: 'close', className: 'modal-close-button', onClick: onClose }, '×')
+        React.createElement('div', { className: 'modal-content', onClick: e => e.stopPropagation() }, [
+            React.createElement('h2', null, item.title),
+            item.imageUrl && React.createElement('img', { src: optimizeImageUrl(item.imageUrl, 800), className: 'detail-modal-image', style: {width:'100%', borderRadius:'8px', margin:'1rem 0'} }),
+            item.prompt && React.createElement('div', { className: 'prompt-container visible' }, [
+                React.createElement('p', null, item.prompt),
+                React.createElement('button', { className: 'copy-button', onClick: () => navigator.clipboard.writeText(item.prompt).then(() => alert('Copiado')) }, 'Copiar Prompt')
             ]),
-            React.createElement('div', { key: 'body', className: 'modal-body' }, [
-                item.imageUrl && React.createElement('img', { key: 'img', src: optimizeImageUrl(item.imageUrl, 800), className: 'detail-modal-image', alt: item.title }),
-                item.description && React.createElement('p', { key: 'desc' }, item.description),
-                item.details && React.createElement('div', { key: 'details-block' }, [
-                    React.createElement('h3', { key: 't-det' }, 'Detalles e Instrucciones'),
-                    React.createElement('div', { key: 'det', className: 'detail-modal-details' }, item.details)
-                ]),
-                item.prompt && React.createElement('div', { key: 'prompt-block', className: 'detail-modal-prompt' }, [
-                    React.createElement('h3', { key: 't-p' }, 'Prompt'),
-                    React.createElement('div', { key: 'p-cont', className: 'prompt-container visible', style: { maxHeight: 'none' } }, [
-                         React.createElement('p', { key: 'p-text' }, item.prompt),
-                         React.createElement('button', { 
-                            key: 'copy', 
-                            className: 'copy-button',
-                            onClick: () => navigator.clipboard.writeText(item.prompt).then(() => alert('Copiado')) 
-                         }, 'Copiar')
-                    ])
-                ]),
-                (item.downloadUrl || item.linkUrl) && React.createElement('div', { key: 'action', style: { marginTop: '2rem', textAlign: 'center' } }, 
-                    React.createElement('a', { 
-                        href: item.downloadUrl || item.linkUrl, 
-                        target: '_blank', 
-                        rel: 'noopener noreferrer',
-                        className: 'card-button',
-                        style: { display: 'inline-block', minWidth: '200px', padding: '1rem' }
-                    }, item.downloadUrl ? 'Descargar Recurso' : 'Ir al Sitio / Ver Tutorial')
-                )
-            ])
+            item.details && React.createElement('p', { style: {marginTop: '1rem', whiteSpace: 'pre-wrap'} }, item.details),
+            (item.downloadUrl || item.linkUrl) && React.createElement('a', { href: item.downloadUrl || item.linkUrl, className: 'card-button', style: {marginTop: '1rem', display: 'block'} }, 'Ir al Recurso')
         ])
     ]);
 };
 
-// ... (Rest of components: ImagePromptCard, DownloadCard, etc.) ...
 const ImagePromptCard = ({ item, onShowDetails }) => {
-    const [isPromptVisible, setIsPromptVisible] = useState(false);
-    const [copyStatus, setCopyStatus] = useState('Copiar');
-    const handleCopy = (e) => {
-        e.stopPropagation();
-        navigator.clipboard.writeText(item.prompt).then(() => {
-            setCopyStatus('¡Copiado!');
-            setTimeout(() => setCopyStatus('Copiar'), 2000);
-        }, () => { setCopyStatus('Error'); });
-    };
-    const promptId = `prompt-${item.id}`;
+    const [isVisible, setIsVisible] = useState(false);
     return React.createElement('div', { className: 'card', onClick: () => onShowDetails(item) }, [
-        item.imageUrl && React.createElement('img', { key: 'image', src: optimizeImageUrl(item.imageUrl), alt: item.title, className: 'card-image', loading: 'lazy', onError: handleImageError }),
-        React.createElement('div', { key: 'content', className: 'card-content' }, [
-            React.createElement('h3', { key: 'title', className: 'card-title' }, item.title),
-            React.createElement('div', { key: 'actions', className: 'card-actions' },
-                React.createElement('button', { className: 'card-button', onClick: (e) => { e.stopPropagation(); setIsPromptVisible(!isPromptVisible); }, 'aria-expanded': isPromptVisible, 'aria-controls': promptId }, isPromptVisible ? 'Ocultar Prompt' : 'Ver Prompt'))
+        React.createElement('img', { src: optimizeImageUrl(item.imageUrl), className: 'card-image', onError: handleImageError }),
+        React.createElement('div', { className: 'card-content' }, [
+            React.createElement('h3', { className: 'card-title' }, item.title),
+            item.prompt && React.createElement('button', { 
+                className: 'card-button', 
+                onClick: (e) => { e.stopPropagation(); setIsVisible(!isVisible); } 
+            }, isVisible ? 'Ocultar Prompt' : 'Ver Prompt')
         ]),
-        React.createElement('div', { key: 'prompt', id: promptId, className: `prompt-container ${isPromptVisible ? 'visible' : ''}`, onClick: (e) => e.stopPropagation() }, [
-            React.createElement('button', { key: 'copy', className: 'copy-button', onClick: handleCopy }, copyStatus),
-            React.createElement('p', { key: 'text' }, item.prompt)
-        ])
+        item.prompt && React.createElement('div', { className: `prompt-container ${isVisible ? 'visible' : ''}` }, item.prompt)
     ]);
 };
 
 const PromptGalleryPage = ({ category }) => {
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [selectedItem, setSelectedItem] = useState(null);
+    const [selected, setSelected] = useState(null);
 
     useEffect(() => {
-        const fetchItems = async () => {
+        const fetch = async () => {
             if (!db) return;
-            try {
-                const q = query(collection(db, 'content'), where('category', '==', category), orderBy('createdAt', 'desc'));
-                const snapshot = await getDocs(q);
-                setItems(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-            } catch (err) {
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
+            const q = query(collection(db, 'content'), where('category', '==', category), orderBy('createdAt', 'desc'));
+            const snap = await getDocs(q);
+            setItems(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+            setLoading(false);
         };
-        fetchItems();
+        fetch();
     }, [category]);
 
-    if (loading) return React.createElement('div', { className: 'loading-container' }, [React.createElement('div', { className: 'loading-spinner' }), React.createElement('p', null, 'Cargando...')]);
+    if (loading) return React.createElement('div', { className: 'loading-container' }, React.createElement('div', { className: 'loading-spinner' }));
 
     return React.createElement('div', null, [
         React.createElement(Navigation, { currentPage: category }),
-        React.createElement('div', { className: 'content-grid' },
-            items.map(item => React.createElement(ImagePromptCard, { key: item.id, item, onShowDetails: setSelectedItem }))
-        ),
-        selectedItem && React.createElement(DetailModal, { item: selectedItem, onClose: () => setSelectedItem(null) })
+        React.createElement('div', { className: 'content-grid' }, items.map(i => React.createElement(ImagePromptCard, { key: i.id, item: i, onShowDetails: setSelected }))),
+        selected && React.createElement(DetailModal, { item: selected, onClose: () => setSelected(null) })
     ]);
 };
 
-// Simplified views for the other pages
-const StaticPage = ({ pageId, title, component }) => (
-    React.createElement('div', null, [
-        React.createElement(Navigation, { currentPage: pageId }),
-        React.createElement('h2', { style: { textAlign: 'center', marginBottom: '2rem' } }, title),
-        React.createElement(component)
-    ])
-);
+const ResourcesPage = () => {
+    const [items, setItems] = useState([]);
+    const [disclaimer, setDisclaimer] = useState('');
+    const [loading, setLoading] = useState(true);
 
-// App Main Switch
+    useEffect(() => {
+        const fetch = async () => {
+            const q = query(collection(db, 'content'), where('category', 'in', ['afiliados', 'recomendaciones']));
+            const snap = await getDocs(q);
+            setItems(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+            
+            const settings = await getDoc(doc(db, 'settings', 'disclaimers'));
+            if (settings.exists()) setDisclaimer(settings.data().resourcesPageDisclaimer);
+            setLoading(false);
+        };
+        fetch();
+    }, []);
+
+    if (loading) return React.createElement('div', { className: 'loading-container' }, React.createElement('div', { className: 'loading-spinner' }));
+
+    return React.createElement('div', { className: 'resources-container' }, [
+        React.createElement(Navigation, { currentPage: 'recursos' }),
+        disclaimer && React.createElement('p', { className: 'resources-disclaimer' }, disclaimer),
+        React.createElement('div', { className: 'recommendation-list' }, items.map(item => (
+            React.createElement('a', { key: item.id, href: item.linkUrl, className: 'recommendation-card has-link', target: '_blank' }, [
+                React.createElement('img', { src: optimizeImageUrl(item.imageUrl, 200), className: 'recommendation-card-image' }),
+                React.createElement('div', null, [
+                    React.createElement('h3', { className: 'recommendation-card-title' }, item.title),
+                    React.createElement('p', { className: 'recommendation-card-description' }, item.description),
+                    item.disclaimer && React.createElement('p', { className: 'affiliate-disclaimer' }, item.disclaimer)
+                ])
+            ])
+        )))
+    ]);
+};
+
+const GeneratorPage = () => {
+    const [text, setText] = useState('Tu frase inspiradora aquí...');
+    const [author, setAuthor] = useState('TheRamzes');
+    const generatorRef = useRef(null);
+
+    const download = async () => {
+        if (!generatorRef.current) return;
+        const dataUrl = await toPng(generatorRef.current, { cacheBust: true });
+        const link = document.createElement('a');
+        link.download = `TheRamzes_Post_${Date.now()}.png`;
+        link.href = dataUrl;
+        link.click();
+    };
+
+    return React.createElement('div', { className: 'contact-container' }, [
+        React.createElement(Navigation, { currentPage: 'generador' }),
+        React.createElement('div', { ref: generatorRef, style: { 
+            background: '#000', padding: '3rem', borderRadius: '16px', border: '1px solid #333', marginBottom: '2rem' 
+        }}, [
+            React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' } }, [
+                React.createElement('img', { src: 'https://yt3.googleusercontent.com/UsEE3B7HZCqYlFrE6zI601Pq-_moV7q1diFWggkrSM5yI7imCvZWnBAjnOy5gp6_xx1LAZTUHg=s160-c-k-c0x00ffffff-no-rj', style: { width: '50px', borderRadius: '50%' } }),
+                React.createElement('div', null, [
+                    React.createElement('p', { style: { fontWeight: 'bold', margin: 0 } }, author),
+                    React.createElement('p', { style: { color: '#666', margin: 0, fontSize: '0.9rem' } }, `@${author.toLowerCase().replace(/\s/g, '')}`)
+                ])
+            ]),
+            React.createElement('p', { style: { fontSize: '1.5rem', lineHeight: '1.4', marginBottom: '1.5rem' } }, text),
+            React.createElement('p', { style: { color: '#666', fontSize: '0.8rem' } }, `${new Date().toLocaleTimeString()} · ${new Date().toLocaleDateString()}`)
+        ]),
+        React.createElement('div', { className: 'contact-form' }, [
+            React.createElement('textarea', { value: text, onChange: (e) => setText(e.target.value), className: 'search-input', style: {paddingLeft: '1rem'} }),
+            React.createElement('input', { value: author, onChange: (e) => setAuthor(e.target.value), className: 'search-input', style: {paddingLeft: '1rem', marginTop: '1rem'} }),
+            React.createElement('button', { onClick: download, className: 'btn-capture', style: { marginTop: '1rem', width: '100%' } }, 'Descargar Imagen')
+        ])
+    ]);
+};
+
+const FrameCapturerPage = () => {
+    const [videoSrc, setVideoSrc] = useState(null);
+    const [captures, setCaptures] = useState([]);
+    const [currentTime, setCurrentTime] = useState(0);
+    const [duration, setDuration] = useState(0);
+    const videoRef = useRef(null);
+    const fileRef = useRef(null);
+
+    const formatTime = (t) => {
+        const m = Math.floor(t / 60);
+        const s = Math.floor(t % 60);
+        const ms = Math.floor((t % 1) * 1000);
+        return `${m}:${s.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;
+    };
+
+    const handleFile = (f) => {
+        if (f && f.type.startsWith('video/')) {
+            setVideoSrc(URL.createObjectURL(f));
+            setCaptures([]);
+        }
+    };
+
+    const capture = () => {
+        const v = videoRef.current;
+        const canvas = document.createElement('canvas');
+        canvas.width = v.videoWidth; canvas.height = v.videoHeight;
+        canvas.getContext('2d').drawImage(v, 0, 0);
+        setCaptures([{ id: Date.now(), url: canvas.toDataURL('image/png'), time: formatTime(v.currentTime) }, ...captures]);
+    };
+
+    useEffect(() => {
+        if (videoRef.current && videoSrc) {
+            const v = videoRef.current;
+            v.onloadedmetadata = () => { setDuration(v.duration); v.currentTime = v.duration; };
+            v.ontimeupdate = () => setCurrentTime(v.currentTime);
+        }
+    }, [videoSrc]);
+
+    if (!videoSrc) return React.createElement('div', null, [
+        React.createElement(Navigation, { currentPage: 'capturador' }),
+        React.createElement('div', { className: 'drop-zone', onClick: () => fileRef.current.click() }, [
+            React.createElement('input', { type: 'file', ref: fileRef, hidden: true, onChange: (e) => handleFile(e.target.files[0]) }),
+            React.createElement('p', null, 'Haz clic o arrastra un video aquí')
+        ])
+    ]);
+
+    return React.createElement('div', null, [
+        React.createElement(Navigation, { currentPage: 'capturador' }),
+        React.createElement('div', { className: 'video-editor-layout' }, [
+            React.createElement('div', null, [
+                React.createElement('video', { ref: videoRef, src: videoSrc, className: 'video-element' }),
+                React.createElement('div', { className: 'video-controls-panel' }, [
+                    React.createElement('input', { type: 'range', className: 'scrubbing-slider', min: 0, max: duration, step: 0.001, value: currentTime, onChange: (e) => videoRef.current.currentTime = e.target.value }),
+                    React.createElement('p', { className: 'time-display' }, `${formatTime(currentTime)} / ${formatTime(duration)}`),
+                    React.createElement('div', { className: 'control-buttons' }, [
+                        React.createElement('button', { className: 'btn-precision', onClick: () => videoRef.current.currentTime -= 0.033 }, '-Frame'),
+                        React.createElement('button', { className: 'btn-capture', onClick: capture }, 'Capturar'),
+                        React.createElement('button', { className: 'btn-precision', onClick: () => videoRef.current.currentTime += 0.033 }, '+Frame')
+                    ]),
+                    React.createElement('button', { className: 'btn-reset', onClick: () => setVideoSrc(null), style: {width:'100%', marginTop:'1rem'} }, 'Cambiar Video')
+                ])
+            ]),
+            React.createElement('div', { className: 'captures-sidebar' }, captures.map(c => React.createElement('div', { key: c.id, className: 'capture-item' }, [
+                React.createElement('img', { src: c.url }),
+                React.createElement('p', { className: 'capture-meta' }, c.time),
+                React.createElement('button', { className: 'capture-overlay-btn', onClick: () => { const a = document.createElement('a'); a.href = c.url; a.download = `frame_${c.time}.png`; a.click(); } }, 'Guardar')
+            ])))
+        ])
+    ]);
+};
+
+// --- Main App ---
 const App = () => {
-    const rootElement = document.getElementById('root');
-    const currentPage = rootElement ? rootElement.getAttribute('data-page') : 'imagenes';
+    const page = document.getElementById('root')?.getAttribute('data-page') || 'imagenes';
 
-    const renderPage = () => {
-        switch (currentPage) {
+    const render = () => {
+        switch (page) {
             case 'imagenes': return React.createElement(PromptGalleryPage, { category: 'imagenes' });
             case 'videos': return React.createElement(PromptGalleryPage, { category: 'videos' });
+            case 'descargas': return React.createElement(PromptGalleryPage, { category: 'descargas' });
+            case 'tutoriales': return React.createElement(PromptGalleryPage, { category: 'tutoriales' });
+            case 'recursos': return React.createElement(ResourcesPage);
+            case 'generador': return React.createElement(GeneratorPage);
             case 'capturador': return React.createElement(FrameCapturerPage);
-            // ... add others here if needed, keeping it minimal to user request
+            case 'sobre-mi': return React.createElement('div', null, [React.createElement(Navigation, { currentPage: 'sobre-mi' }), React.createElement('div', { className: 'about-me-container' }, 'TheRamzes: Creador de contenido y apasionado de la IA.')]);
+            case 'contacto': return React.createElement('div', null, [React.createElement(Navigation, { currentPage: 'contacto' }), React.createElement('div', { className: 'contact-container' }, 'Escríbeme a través de mis redes sociales.')]);
             default: return React.createElement(PromptGalleryPage, { category: 'imagenes' });
         }
     };
 
-    return React.createElement('div', null, [
-        renderPage(),
-        React.createElement(Footer)
-    ]);
+    return React.createElement('div', null, [render(), React.createElement(Footer)]);
 };
 
-const container = document.getElementById('root');
-if (container) {
-    const root = ReactDOM.createRoot(container);
-    root.render(React.createElement(App));
-}
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(React.createElement(App));
