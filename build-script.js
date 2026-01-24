@@ -7,7 +7,6 @@ const outputDir = 'public';
 const filesToDeploy = [
     'index.html',
     'videos.html',
-    'capturador.html',
     'descargas.html',
     'generador.html',
     'tutoriales.html',
