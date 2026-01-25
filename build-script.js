@@ -9,6 +9,7 @@ const filesToDeploy = [
     'videos.html',
     'descargas.html',
     'generador.html',
+    'capturador.html',
     'tutoriales.html',
     'recursos.html',
     'sobre-mi.html',
@@ -38,7 +39,7 @@ console.log('Iniciando el proceso de build...');
 
 try {
     const outputDirPath = path.join(process.cwd(), outputDir);
-    
+
     // 1. Crear el directorio de salida si no existe.
     if (!fs.existsSync(outputDirPath)) {
         fs.mkdirSync(outputDirPath);
@@ -56,7 +57,7 @@ try {
         }
 
         console.log(`Procesando: ${fileName}...`);
-        
+
         let fileContent = fs.readFileSync(sourcePath, 'utf8');
 
         // Verificar si este archivo necesita el reemplazo de placeholders.
@@ -66,14 +67,14 @@ try {
                 fileContent = fileContent.replace(/__FIREBASE_API_KEY__/g, apiKey);
                 console.log(`  -> Clave API inyectada en ${fileName}.`);
             }
-            
+
             // Inyectar contraseña del panel de admin
             if (fileContent.includes('__ADMIN_PASSWORD__')) {
                 fileContent = fileContent.replace(/__ADMIN_PASSWORD__/g, adminPassword);
                 console.log(`  -> Contraseña de admin inyectada en ${fileName}.`);
             }
         }
-        
+
         fs.writeFileSync(destPath, fileContent, 'utf8');
         console.log(`  -> Archivo copiado a ${destPath}`);
     });
