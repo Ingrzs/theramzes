@@ -4,6 +4,7 @@
   "description": "AI Prompts & Creations",
   "type": "module",
   "scripts": {
+    "dev": "npx -y live-server",
     "build": "node build-script.js"
   },
   "author": "TheRamzes",
