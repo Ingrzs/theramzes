@@ -42,20 +42,6 @@ const handleImageError = (e) => {
 
 // --- Components ---
 
-const Header = ({ page }) => {
-    const isGenerator = page === 'generador';
-    const isCapturador = page === 'capturador';
-    return React.createElement('header', { className: 'app-header' }, [
-        React.createElement('h1', { key: 'h1' }, 'TheRamzes'),
-        React.createElement('p', { key: 'p', className: 'welcome-text' },
-            isGenerator
-                ? 'Crea imágenes estéticas con estilo de Tweet para tus redes sociales.'
-                : isCapturador
-                    ? 'Frame Studio: Extrae la perfección de cada segundo.'
-                    : 'Bienvenido a mi universo creativo. Descubre, aprende y crea con la ayuda de la inteligencia artificial.'
-        )
-    ]);
-};
 
 const Footer = () => (
     React.createElement('footer', {}, [
@@ -961,7 +947,6 @@ const App = () => {
     ];
 
     return React.createElement('div', {}, [
-        React.createElement(Header, { key: 'header', page }),
         !['generador', 'sobre-mi', 'contacto', 'capturador'].includes(page) && React.createElement('div', { key: 'search', className: 'search-container' }, [
             React.createElement('input', {
                 className: 'search-input',
