@@ -976,6 +976,27 @@ footer {
     min-height: auto;
 }
 
+/* Formatos de imagen */
+.tweet-card.format-default {
+    max-width: 600px;
+    aspect-ratio: auto;
+}
+
+.tweet-card.format-4-5 {
+    max-width: 600px;
+    aspect-ratio: 4 / 5;
+}
+
+.tweet-card.format-1-1 {
+    max-width: 600px;
+    aspect-ratio: 1 / 1;
+}
+
+.tweet-card.format-9-16 {
+    max-width: 360px;
+    aspect-ratio: 9 / 16;
+}
+
 /* Dark Mode Card (Default) */
 .tweet-card.dark {
     background-color: #000000;

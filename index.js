@@ -462,7 +462,9 @@ const TweetCardUI = ({
     username,
     setUsername,
     onAvatarClick,
-    verificationType = 'none'
+    verificationType = 'none',
+    imageFormat = 'default',
+    postImage = null
 }) => {
     // Sello oficial de Twitter/X (8 puntas redondeadas)
     const twBadge = `data:image/svg+xml;base64,${btoa('<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M22.25 12C22.25 10.57 21.37 9.33 20.06 8.66C20.52 7.27 20.26 5.76 19.25 4.75C18.24 3.74 16.73 3.48 15.34 3.94C14.67 2.63 13.43 1.75 12 1.75C10.57 1.75 9.33 2.63 8.66 3.94C7.27 3.48 5.76 3.74 4.75 4.75C3.74 5.76 3.48 7.27 3.94 8.66C2.63 9.33 1.75 10.57 1.75 12C1.75 13.43 2.63 14.67 3.94 15.34C3.48 16.73 3.74 18.24 4.75 19.25C5.76 20.26 7.27 20.52 8.66 20.06C9.33 21.37 10.57 22.25 12 22.25C13.43 22.25 14.67 21.37 15.34 20.06C16.73 20.52 18.24 20.26 19.25 19.25C20.26 18.24 20.52 16.73 20.06 15.34C21.37 14.67 22.25 13.43 22.25 12Z" fill="#1D9BF0"/><path d="M10.5 15.25L7 11.75L8.06 10.69L10.5 13.13L15.94 7.69L17 8.75L10.5 15.25Z" fill="white"/></svg>')}`;
@@ -489,8 +491,9 @@ const TweetCardUI = ({
         marginBottom: '1rem'
     };
 
+    const formatClass = imageFormat && imageFormat !== 'default' ? `format-${imageFormat.replace(':', '-')}` : 'format-default';
     return React.createElement('div', {
-        className: `tweet-card ${theme} ${font} ${align} ${!isEditable ? 'tweet-card-batch' : ''}`,
+        className: `tweet-card ${theme} ${font} ${align} ${formatClass} ${!isEditable ? 'tweet-card-batch' : ''}`,
         style: !isEditable ? { marginBottom: '20px' } : {}
     }, [
         React.createElement('div', { key: 'header', style: headerContainerStyle }, [
@@ -555,7 +558,13 @@ const TweetCardUI = ({
                 })
             ])
         ]),
-        React.createElement('div', { key: 'body', className: 'tweet-body' }, txt)
+        React.createElement('div', { key: 'body', className: 'tweet-body' }, txt),
+        postImage && React.createElement('img', {
+            key: 'post-image',
+            src: postImage,
+            className: 'tweet-post-image',
+            style: { width: '100%', marginTop: '1rem', borderRadius: '12px', maxHeight: '400px', objectFit: 'cover' }
+        })
     ])
 };
 
@@ -579,6 +588,9 @@ const GeneratorPage = () => {
     const [align, setAlign] = useState('text-left');
     const [theme, setTheme] = useState('dark');
     const [verificationType, setVerificationType] = useState('none');
+    const [imageFormat, setImageFormat] = useState('default');
+    const [isPostWithImage, setIsPostWithImage] = useState(false);
+    const [postImage, setPostImage] = useState(null);
 
     const [inputText, setInputText] = useState('Haz clic en el nombre o foto para editar.\nEscribe aquí tu frase.\nUsa "Enter" para crear nuevas imágenes.');
 
@@ -586,6 +598,7 @@ const GeneratorPage = () => {
     const [isGenerating, setIsGenerating] = useState(false);
 
     const fileInputRef = useRef(null);
+    const postImageInputRef = useRef(null);
     const batchContainerRef = useRef(null);
 
     const cleanLineText = (text) => {
@@ -608,6 +621,15 @@ const GeneratorPage = () => {
         }
     };
 
+    const handlePostImageUpload = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => setPostImage(reader.result);
+            reader.readAsDataURL(file);
+        }
+    };
+
     const handleClearText = () => {
         if (window.confirm("¿Borrar todo el texto y los resultados?")) {
             setInputText("");
@@ -616,34 +638,65 @@ const GeneratorPage = () => {
     };
 
     const handleGenerate = async () => {
-        const lines = inputText.split('\n')
-            .map(l => cleanLineText(l))
-            .filter(l => l.length > 0)
-            .slice(0, 5);
-
-        if (lines.length === 0) {
-            alert("Por favor escribe al menos una frase.");
-            return;
-        }
-
-        setIsGenerating(true);
-        setGeneratedImages([]);
-        const bgColor = theme === 'dark' ? '#000000' : '#ffffff';
-
-        setTimeout(async () => {
-            const newImages = [];
-            if (batchContainerRef.current) {
-                const nodes = batchContainerRef.current.querySelectorAll('.tweet-card-batch');
-                for (let i = 0; i < nodes.length; i++) {
-                    try {
-                        const dataUrl = await toPng(nodes[i], { quality: 1.0, pixelRatio: 3, backgroundColor: bgColor });
-                        newImages.push(dataUrl);
-                    } catch (err) { console.error("Error", err); }
-                }
+        if (isPostWithImage) {
+            if (!inputText.trim()) {
+                alert("Por favor escribe el texto del post.");
+                return;
             }
-            setGeneratedImages(newImages);
-            setIsGenerating(false);
-        }, 800);
+            if (!postImage) {
+                alert("Por favor carga una imagen.");
+                return;
+            }
+            setIsGenerating(true);
+            setGeneratedImages([]);
+            const bgColor = theme === 'dark' ? '#000000' : '#ffffff';
+
+            setTimeout(async () => {
+                const newImages = [];
+                if (batchContainerRef.current) {
+                    const node = batchContainerRef.current.querySelector('.tweet-card-batch');
+                    if (node) {
+                        try {
+                            const dataUrl = await toPng(node, { quality: 1.0, pixelRatio: 3, backgroundColor: bgColor });
+                            newImages.push(dataUrl);
+                        } catch (err) {
+                            console.error("Error", err);
+                        }
+                    }
+                }
+                setGeneratedImages(newImages);
+                setIsGenerating(false);
+            }, 800);
+        } else {
+            const lines = inputText.split('\n')
+                .map(l => cleanLineText(l))
+                .filter(l => l.length > 0)
+                .slice(0, 5);
+
+            if (lines.length === 0) {
+                alert("Por favor escribe al menos una frase.");
+                return;
+            }
+
+            setIsGenerating(true);
+            setGeneratedImages([]);
+            const bgColor = theme === 'dark' ? '#000000' : '#ffffff';
+
+            setTimeout(async () => {
+                const newImages = [];
+                if (batchContainerRef.current) {
+                    const nodes = batchContainerRef.current.querySelectorAll('.tweet-card-batch');
+                    for (let i = 0; i < nodes.length; i++) {
+                        try {
+                            const dataUrl = await toPng(nodes[i], { quality: 1.0, pixelRatio: 3, backgroundColor: bgColor });
+                            newImages.push(dataUrl);
+                        } catch (err) { console.error("Error", err); }
+                    }
+                }
+                setGeneratedImages(newImages);
+                setIsGenerating(false);
+            }, 800);
+        }
     };
 
     const handleOpenImage = (dataUrl) => {
@@ -664,6 +717,19 @@ const GeneratorPage = () => {
     };
 
     const optionStyle = { backgroundColor: '#1e1e1e', color: '#e0e0e0' };
+    
+    const getContainerWidth = () => {
+        switch (imageFormat) {
+            case '9:16':
+                return '360px';
+            case '1:1':
+            case '4:5':
+                return '600px';
+            case 'default':
+            default:
+                return '600px';
+        }
+    };
 
     return React.createElement('div', { className: 'generator-container' }, [
         React.createElement('input', { key: 'file', type: 'file', ref: fileInputRef, style: { display: 'none' }, accept: 'image/*', onChange: handleImageUpload }),
@@ -673,10 +739,10 @@ const GeneratorPage = () => {
         React.createElement('div', { key: 'preview', className: 'preview-area' }, [
             React.createElement(TweetCardUI, {
                 key: 'live',
-                txt: inputText.split('\n')[0] || 'Escribe algo...',
+                txt: isPostWithImage ? inputText : (inputText.split('\n')[0] || 'Escribe algo...'),
                 isEditable: true,
                 theme, font, align, avatarUrl, name, setName, username, setUsername, onAvatarClick: handleAvatarClick,
-                verificationType
+                verificationType, imageFormat, postImage
             })
         ]),
 
@@ -733,18 +799,68 @@ const GeneratorPage = () => {
                             title: 'Twitter Verification'
                         }, 'TW'),
                     ])
+                ]),
+                React.createElement('div', { className: 'control-group' }, [
+                    React.createElement('label', {}, 'Post con Imagen'),
+                    React.createElement('input', {
+                        type: 'checkbox',
+                        checked: isPostWithImage,
+                        onChange: (e) => {
+                            setIsPostWithImage(e.target.checked);
+                            if (e.target.checked) {
+                                setPostImage(null);
+                            }
+                        },
+                        style: { width: '20px', height: '20px', cursor: 'pointer' }
+                    })
+                ]),
+                React.createElement('div', { className: 'control-group' }, [
+                    React.createElement('label', {}, 'Formato'),
+                    React.createElement('div', { className: 'control-btn-group' }, [
+                        React.createElement('button', {
+                            className: `control-btn ${imageFormat === 'default' ? 'active' : ''}`,
+                            onClick: () => setImageFormat('default'),
+                            title: 'Formato Rectangular'
+                        }, 'Rect'),
+                        React.createElement('button', {
+                            className: `control-btn ${imageFormat === '4:5' ? 'active' : ''}`,
+                            onClick: () => setImageFormat('4:5'),
+                            title: 'Formato 4:5'
+                        }, '4:5'),
+                        React.createElement('button', {
+                            className: `control-btn ${imageFormat === '1:1' ? 'active' : ''}`,
+                            onClick: () => setImageFormat('1:1'),
+                            title: 'Formato 1:1'
+                        }, '1:1'),
+                        React.createElement('button', {
+                            className: `control-btn ${imageFormat === '9:16' ? 'active' : ''}`,
+                            onClick: () => setImageFormat('9:16'),
+                            title: 'Formato 9:16'
+                        }, '9:16'),
+                    ])
                 ])
             ]),
             React.createElement('div', { key: 'row2', className: 'control-group' }, [
                 React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' } }, [
-                    React.createElement('label', {}, 'Contenido (Separa con "Enter")'),
-                    React.createElement('button', { onClick: handleClearText, className: 'control-action-btn' }, 'Limpiar')
+                    React.createElement('label', {}, isPostWithImage ? 'Texto del Post' : 'Contenido (Separa con "Enter")'),
+                    React.createElement('button', { onClick: () => { setInputText(''); setGeneratedImages([]); setPostImage(null); }, className: 'control-action-btn' }, 'Limpiar')
                 ]),
-                React.createElement('textarea', { className: 'control-input', rows: 4, value: inputText, onChange: e => setInputText(e.target.value), placeholder: "Escribe aquí..." })
+                React.createElement('textarea', { className: 'control-input', rows: isPostWithImage ? 3 : 4, value: inputText, onChange: e => setInputText(e.target.value), placeholder: isPostWithImage ? "Escribe el texto para tu post..." : "Escribe aquí..." })
+            ]),
+
+            isPostWithImage && React.createElement('div', { key: 'image-upload', className: 'control-group' }, [
+                React.createElement('label', {}, 'Subir Imagen'),
+                React.createElement('input', {
+                    type: 'file',
+                    ref: postImageInputRef,
+                    accept: 'image/*',
+                    onChange: handlePostImageUpload,
+                    style: { display: 'block', marginBottom: '0.5rem', color: '#e0e0e0' }
+                })
             ]),
         ]),
 
-        React.createElement('button', { key: 'gen-btn', className: 'action-btn', onClick: handleGenerate, disabled: isGenerating }, isGenerating ? 'Generando...' : 'Generar Imágenes (Max 5)'),
+        React.createElement('button', { key: 'gen-btn', className: 'action-btn', onClick: handleGenerate, disabled: isGenerating }, isGenerating ? 'Generando...' : (isPostWithImage ? 'Generar Post' : 'Generar Imágenes (Max 5)')),
 
         generatedImages.length > 0 && React.createElement('div', { key: 'results', className: 'generated-results' }, [
             React.createElement('h3', { key: 'rt', className: 'text-center' }, 'Resultados'),
@@ -764,16 +880,25 @@ const GeneratorPage = () => {
 
         isGenerating && React.createElement('div', {
             key: 'batch', ref: batchContainerRef,
-            style: { position: 'fixed', left: '0', top: '0', width: '600px', zIndex: -1000, opacity: 0, pointerEvents: 'none' }
-        }, inputText.split('\n').map(l => cleanLineText(l)).filter(l => l.length > 0).slice(0, 5).map((line, idx) =>
-            React.createElement(TweetCardUI, {
-                key: idx,
-                txt: line,
+            style: { position: 'fixed', left: '0', top: '0', width: getContainerWidth(), zIndex: -1000, opacity: 0, pointerEvents: 'none' }
+        }, isPostWithImage 
+            ? [React.createElement(TweetCardUI, {
+                key: 0,
+                txt: inputText,
                 isEditable: false,
                 theme, font, align, avatarUrl, name, username,
-                verificationType
-            })
-        ))
+                verificationType, imageFormat, postImage
+            })]
+            : inputText.split('\n').map(l => cleanLineText(l)).filter(l => l.length > 0).slice(0, 5).map((line, idx) =>
+                React.createElement(TweetCardUI, {
+                    key: idx,
+                    txt: line,
+                    isEditable: false,
+                    theme, font, align, avatarUrl, name, username,
+                    verificationType, imageFormat
+                })
+            )
+        )
     ]);
 };
 
